@@ -2,90 +2,172 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Analizar Composición</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Composition Lab</title>
     <style>
+        :root {
+            --bg-color: #0a0a0a;
+            --card-bg: #1a1a1a;
+            --accent-color: #FFCC00;
+            --text-main: #ffffff;
+            --text-dim: #888888;
+        }
+
         body {
             margin: 0;
             padding: 0;
-            background-color: #000;
-            color: white;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            height: 100vh;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            height: 100dvh;
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
+            overflow: hidden;
+        }
+
+        /* Fondo decorativo sutil */
+        body::before {
+            content: "";
+            position: absolute;
+            top: -50%; left: -50%; width: 200%; height: 200%;
+            background: radial-gradient(circle at center, #1a1a1a 0%, #0a0a0a 70%);
+            z-index: -1;
         }
 
         .container {
             text-align: center;
-            max-width: 500px;
+            width: 90%;
+            max-width: 400px;
             padding: 20px;
         }
 
+        .logo-area {
+            margin-bottom: 40px;
+        }
+
         h1 {
-            font-size: 2.2rem;
-            margin-bottom: 10px;
+            font-size: 2.4rem;
+            font-weight: 800;
+            margin: 0;
+            letter-spacing: -1px;
+            background: linear-gradient(to bottom, #fff, #aaa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
         }
 
         p {
-            color: #888;
-            font-size: 1.1rem;
-            margin-bottom: 40px;
+            color: var(--text-dim);
+            font-size: 1rem;
+            margin-top: 10px;
         }
 
         .btn-group {
             display: flex;
             flex-direction: column;
-            gap: 18px;
+            gap: 16px;
         }
 
         .btn {
-            background-color: #fff;
-            color: #000;
+            position: relative;
+            background-color: var(--card-bg);
+            color: var(--text-main);
             text-decoration: none;
-            padding: 18px 40px;
-            font-size: 16px;
-            font-weight: bold;
-            border-radius: 30px;
-            border: none;
+            padding: 20px;
+            font-size: 17px;
+            font-weight: 600;
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
             cursor: pointer;
-            transition: background 0.2s;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             display: flex;
             align-items: center;
-            justify-content: center;
-            gap: 12px;
+            justify-content: flex-start;
+            gap: 15px;
+            overflow: hidden;
         }
 
-        .btn:hover {
-            background-color: #ddd;
+        /* Efecto de brillo al tocar */
+        .btn:active {
+            transform: scale(0.97);
+            background-color: #222;
+            border-color: var(--accent-color);
         }
 
-        /* Estilos para los íconos SVG */
-        .btn svg {
-            width: 22px;
-            height: 22px;
-            fill: currentColor;
+        .btn-icon {
+            font-size: 24px;
+            width: 40px;
+            text-align: center;
+        }
+
+        .btn-text {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .btn-subtitle {
+            font-size: 12px;
+            color: var(--text-dim);
+            font-weight: 400;
+        }
+
+        /* Color especial para el modo Museo/Aleatorio */
+        .btn-museum {
+            border-color: rgba(255, 204, 0, 0.3);
+        }
+        
+        .btn-museum .btn-icon {
+            filter: drop-shadow(0 0 5px rgba(255, 204, 0, 0.5));
+        }
+
+        footer {
+            position: absolute;
+            bottom: 30px;
+            font-size: 12px;
+            color: #333;
+            letter-spacing: 1px;
+            text-transform: uppercase;
         }
     </style>
 </head>
 <body>
 
     <div class="container">
-        <h1>Analizar Composición</h1>
-        <p>Selecciona la herramienta que deseas utilizar.</p>
+        <div class="logo-area">
+            <h1>COMPOSICIÓN</h1>
+            <p>Laboratorio Visual</p>
+        </div>
 
         <div class="btn-group">
             <a href="utilidad1.html" class="btn">
-                🔴 Usar la Cámara
+                <span class="btn-icon">📷</span>
+                <div class="btn-text">
+                    <span>Usar Cámara</span>
+                    <span class="btn-subtitle">Caza encuadres en tiempo real</span>
+                </div>
             </a>
 
             <a href="utilidad2.html" class="btn">
-                🟦 Cargar Imágenes
+                <span class="btn-icon">🖼️</span>
+                <div class="btn-text">
+                    <span>Analizar Galería</span>
+                    <span class="btn-subtitle">Carga tus propias fotografías</span>
+                </div>
+            </a>
+
+            <a href="utilidad3.html" class="btn btn-museum">
+                <span class="btn-icon">🏛️</span>
+                <div class="btn-text">
+                    <span>Estudio de Maestros</span>
+                    <span class="btn-subtitle">Pinturas clásicas aleatorias</span>
+                </div>
             </a>
         </div>
     </div>
+
+    <footer>Visual Studio Tool</footer>
 
 </body>
 </html>
