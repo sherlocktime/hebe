@@ -46,7 +46,6 @@
 
         #mainActionBtn { position: absolute; z-index: 40; padding: 18px 40px; font-size: 16px; border-radius: 30px; border: none; background: white; color: black; font-weight: bold; }
 
-        /* NUEVO OBTURADOR MEJORADO */
         .controls-area {
             position: fixed;
             bottom: calc(30px + env(safe-area-inset-bottom, 0px));
@@ -70,7 +69,6 @@
             justify-content: center;
             box-sizing: border-box;
             outline: none;
-            /* transition: all 0.2s ease; */
             padding: 0;
         }
 
@@ -84,7 +82,7 @@
 
         #btn-shutter.is-frozen #btn-shutter-inner {
             background: #007AFF;
-            transform: scale(0.85); /* Un toque sutil para indicar presión */
+            transform: scale(0.85);
         }
 
         #btn-shutter:active {
@@ -131,9 +129,14 @@
     let isRunning = false;
     let isFrozen = false;
     let marginX = 0.05;
-    let borderY = 0.25;
+
+    // Calculo inicial para Rectángulo Dorado
+    const goldenRatio = 1.618;
+    let borderY = (1 - ((1 - 2 * marginX) * (window.innerWidth / window.innerHeight) * goldenRatio)) / 2;
+    if (borderY < 0.05) borderY = 0.1; // Seguridad por si la pantalla es muy alargada
+
     let isDragging = false;
-    let dragMode = "frame";
+    let dragMode = "none";
     let fugaX = 0.5;
     let fugaY = 0.5;
 
@@ -146,22 +149,25 @@
 
     function handleStart(e) {
         if (!isRunning) return;
-        isDragging = true;
         const rect = canvas.getBoundingClientRect();
         const touchY = (e.touches ? e.touches[0].clientY : e.clientY) - rect.top;
         const H = window.innerHeight;
 
-        if (grids[gIdx] === 'fuga') {
-            const currentBorderPixel = H * borderY;
-            if (touchY < currentBorderPixel + 60 || touchY > (H - currentBorderPixel - 60)) {
-                dragMode = "frame";
-            } else {
-                dragMode = "fuga";
-            }
-        } else {
+        const currentTop = H * borderY;
+        const currentBottom = H * (1 - borderY);
+        const handleSize = 50; // Área de sensibilidad de la manija
+
+        // Solo arrastrar marco si se toca cerca de las manijas (arriba o abajo)
+        if (Math.abs(touchY - currentTop) < handleSize || Math.abs(touchY - currentBottom) < handleSize) {
+            isDragging = true;
             dragMode = "frame";
+        } else if (grids[gIdx] === 'fuga') {
+            // Si es modo fuga y no tocó manijas, chequear si toca el centro para mover punto de fuga
+            isDragging = true;
+            dragMode = "fuga";
         }
-        handleMove(e);
+
+        if (isDragging) handleMove(e);
     }
 
     function handleMove(e) {
@@ -187,10 +193,10 @@
 
     canvas.addEventListener('touchstart', handleStart, {passive: false});
     canvas.addEventListener('touchmove', handleMove, {passive: false});
-    canvas.addEventListener('touchend', () => isDragging = false);
+    canvas.addEventListener('touchend', () => { isDragging = false; dragMode = "none"; });
     canvas.addEventListener('mousedown', handleStart);
     window.addEventListener('mousemove', (e) => isDragging && handleMove(e));
-    window.addEventListener('mouseup', () => isDragging = false);
+    window.addEventListener('mouseup', () => { isDragging = false; dragMode = "none"; });
 
     function render(now) {
         if (!isRunning) return;
@@ -244,6 +250,8 @@
         ctx.strokeStyle = colors[cIdx];
         ctx.lineWidth = 2.5;
         ctx.strokeRect(x, y, rectW, rectH);
+
+        // Manijas visuales
         ctx.fillStyle = colors[cIdx];
         ctx.globalAlpha = 0.6;
         ctx.fillRect(W/2 - 25, y - 2, 50, 4);
@@ -355,12 +363,10 @@
 
     document.getElementById('mainActionBtn').addEventListener('click', startCamera);
 
-    // LOGICA OBTURADOR
     const shutter = document.getElementById('btn-shutter');
     shutter.addEventListener('click', () => {
         isFrozen = !isFrozen;
         shutter.classList.toggle('is-frozen');
-
         if (isFrozen) {
             freezeCanvas.width = video.videoWidth;
             freezeCanvas.height = video.videoHeight;
@@ -378,13 +384,12 @@
         document.getElementById('color-dot').style.background = colors[cIdx];
     });
 
-document.getElementById('btn-reset').addEventListener('click', () => {
+    document.getElementById('btn-reset').addEventListener('click', () => {
         const W = window.innerWidth;
         const H = window.innerHeight;
-        const rectW = W * 0.9;
-        const goldenH = rectW * 1.618;
-        let calculatedBorder = (H - goldenH) / (2 * H);
-        borderY = Math.max(0.05, Math.min(0.4, calculatedBorder));
+        // Reset a Rectángulo Dorado
+        borderY = (1 - ((1 - 2 * marginX) * (W / H) * goldenRatio)) / 2;
+        if (borderY < 0.05) borderY = 0.1;
         fugaX = 0.5;
         fugaY = 0.5;
     });
