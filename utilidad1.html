@@ -129,12 +129,7 @@
     let isRunning = false;
     let isFrozen = false;
     let marginX = 0.05;
-
-    // Calculo inicial para Rectángulo Dorado
-    const goldenRatio = 1.618;
-    let borderY = (1 - ((1 - 2 * marginX) * (window.innerWidth / window.innerHeight) * goldenRatio)) / 2;
-    if (borderY < 0.05) borderY = 0.1; // Seguridad por si la pantalla es muy alargada
-
+    let borderY = 0.25; // Valor temporal hasta el primer reset
     let isDragging = false;
     let dragMode = "none";
     let fugaX = 0.5;
@@ -142,6 +137,21 @@
 
     let lastFrameTime = 0;
     const fpsLimit = 30;
+
+    function aplicarRectanguloDorado() {
+        const W = window.innerWidth;
+        const H = window.innerHeight;
+        const goldenRatio = 1.618;
+        const rectW = W * (1 - 2 * marginX);
+        const goldenH = rectW * goldenRatio;
+        let calculatedBorder = (H - goldenH) / (2 * H);
+        borderY = Math.max(0.02, Math.min(0.45, calculatedBorder));
+        fugaX = 0.5;
+        fugaY = 0.5;
+    }
+
+    // Inicializar dimensiones
+    aplicarRectanguloDorado();
 
     async function lockPortrait() {
         try { if (screen.orientation && screen.orientation.lock) await screen.orientation.lock('portrait'); } catch (e) {}
@@ -155,14 +165,13 @@
 
         const currentTop = H * borderY;
         const currentBottom = H * (1 - borderY);
-        const handleSize = 50; // Área de sensibilidad de la manija
+        const handleThreshold = 50; // Sensibilidad de la zona de las manijas
 
-        // Solo arrastrar marco si se toca cerca de las manijas (arriba o abajo)
-        if (Math.abs(touchY - currentTop) < handleSize || Math.abs(touchY - currentBottom) < handleSize) {
+        // Cambiar: Solo arrastra si el toque es cerca de las manijas superior o inferior
+        if (Math.abs(touchY - currentTop) < handleThreshold || Math.abs(touchY - currentBottom) < handleThreshold) {
             isDragging = true;
             dragMode = "frame";
         } else if (grids[gIdx] === 'fuga') {
-            // Si es modo fuga y no tocó manijas, chequear si toca el centro para mover punto de fuga
             isDragging = true;
             dragMode = "fuga";
         }
@@ -250,8 +259,6 @@
         ctx.strokeStyle = colors[cIdx];
         ctx.lineWidth = 2.5;
         ctx.strokeRect(x, y, rectW, rectH);
-
-        // Manijas visuales
         ctx.fillStyle = colors[cIdx];
         ctx.globalAlpha = 0.6;
         ctx.fillRect(W/2 - 25, y - 2, 50, 4);
@@ -345,7 +352,12 @@
     function line(x1, y1, x2, y2) { ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke(); }
 
     function startCamera() {
-        document.documentElement.requestFullscreen().then(lockPortrait).catch(() => {});
+        document.documentElement.requestFullscreen().then(() => {
+            lockPortrait();
+            // Recalcular una vez en fullscreen para evitar estiramientos
+            setTimeout(aplicarRectanguloDorado, 300);
+        }).catch(() => {});
+
         navigator.mediaDevices.getUserMedia({
             video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } }
         })
@@ -367,6 +379,7 @@
     shutter.addEventListener('click', () => {
         isFrozen = !isFrozen;
         shutter.classList.toggle('is-frozen');
+
         if (isFrozen) {
             freezeCanvas.width = video.videoWidth;
             freezeCanvas.height = video.videoHeight;
@@ -384,15 +397,7 @@
         document.getElementById('color-dot').style.background = colors[cIdx];
     });
 
-    document.getElementById('btn-reset').addEventListener('click', () => {
-        const W = window.innerWidth;
-        const H = window.innerHeight;
-        // Reset a Rectángulo Dorado
-        borderY = (1 - ((1 - 2 * marginX) * (W / H) * goldenRatio)) / 2;
-        if (borderY < 0.05) borderY = 0.1;
-        fugaX = 0.5;
-        fugaY = 0.5;
-    });
+    document.getElementById('btn-reset').addEventListener('click', aplicarRectanguloDorado);
 
     document.addEventListener("visibilitychange", () => {
         if (document.hidden) isRunning = false;
