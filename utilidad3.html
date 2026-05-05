@@ -8,8 +8,8 @@
         body {
             margin: 0; padding: 0; background-color: #000; color: white;
             font-family: sans-serif; overflow: hidden; height: 100dvh;
-            user-select: none; -webkit-user-select: none; /* Evita selección global */
-            -webkit-touch-callout: none; /* Evita menú contextual en iOS */
+            user-select: none; -webkit-user-select: none;
+            -webkit-touch-callout: none;
         }
         #container { position: relative; width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; touch-action: none; }
         canvas { position: absolute; z-index: 2; pointer-events: auto; }
@@ -53,7 +53,8 @@
             text-transform: uppercase;
             backdrop-filter: blur(5px);
             user-select: none;
-            -webkit-tap-highlight-color: transparent; /* Evita el recuadro azul al tocar */
+            -webkit-tap-highlight-color: transparent;
+            transition: opacity 0.2s ease; /* Para el muteo suave */
         }
 
         #btn-grid { flex: 1; max-width: 180px; padding: 0 10px; }
@@ -86,23 +87,28 @@
     <button id="mainActionBtn">EXPLORAR MUSEO</button>
 
     <div id="top-ui">
-        <button id="btn-next" class="ui-btn">OTRA PINTURA</button>
+        <button id="btn-next" class="ui-btn">OTRA OBRA</button>
     </div>
 
     <div class="controls-area" id="controls-area">
-        <button id="btn-grid" class="ui-btn">Regla de Tercios</button>
-        <button id="btn-transform" class="ui-btn">ROT</button>
-        <button id="btn-color" class="ui-btn"><div id="color-dot"></div></button>
         <button id="btn-reset" class="ui-btn">&#8864;</button>
+        <button id="btn-grid" class="ui-btn">Regla de Tercios</button>
+        <button id="btn-color" class="ui-btn"><div id="color-dot"></div></button>
+        <button id="btn-transform" class="ui-btn">MODO</button>
     </div>
 </div>
 
 <script>
+    let fps = 30;
+    let fpsInterval = 1000 / fps;
+    let then = performance.now();
+
     const canvas = document.getElementById('canvas');
     const ctx = canvas.getContext('2d', { willReadFrequently: true });
+    const btnTransform = document.getElementById('btn-transform');
 
-    const grids = ['tercios', 'golden', 'tri-aureos', 'masas', 'cuadrado', 'fuga', 'fibonacci', 'hibrido-L', 'diagonales'];
-    const gridLabels = ['Regla de Tercios', 'Proporción Áurea', 'Triángulos Áureos', 'Masas (Notan)', 'Encuadre Cuadrado', '1 Punto de Fuga', 'Espiral Áurea', 'Híbrido en L', 'Diagonales'];
+    const grids = ['tercios', 'golden', 'tri-aureos', 'masas', 'cuadrado', 'fuga', 'fibonacci', 'comp-L', 'diagonales'];
+    const gridLabels = ['Regla de Tercios', 'Proporción Áurea', 'Triángulos Áureos', 'Balance', 'Cuadrado', 'Punto de Fuga', 'Espiral Áurea', 'Composición L', 'Diagonales'];
 
     let gIdx = 0, transformIdx = 0, cIdx = 0;
     const colors = ['#FFFFFF', '#FF3B30', '#4CD964', '#FFCC00', '#007AFF'];
@@ -112,7 +118,6 @@
     let interX = 0.3, interY = 0.3;
     let pulseStartTime = 0;
 
-    // Variables Modo Masas
     let mBlur = 5, mThr = 127, mInvert = false, isBypass = false;
 
     let loadedImage = null, imgX = 0, imgY = 0, imgScale = 1;
@@ -122,6 +127,21 @@
     function toggleFullScreen() {
         if (!document.fullscreenElement) {
             document.documentElement.requestFullscreen().catch(() => {});
+        }
+    }
+
+    // --- FUNCIÓN DE MUTEO DEL BOTÓN MODO ---
+    function updateTransformBtnState() {
+        const currentGrid = grids[gIdx];
+        // Útil en: Triángulos Áureos, Masas (Balance), Fibonacci (Espiral) y Diagonales
+        const isUseful = ['tri-aureos', 'masas', 'fibonacci', 'diagonales'].includes(currentGrid);
+
+        if (isUseful) {
+            btnTransform.style.opacity = "1";
+            btnTransform.style.pointerEvents = "auto";
+        } else {
+            btnTransform.style.opacity = "0.2";
+            btnTransform.style.pointerEvents = "none";
         }
     }
 
@@ -173,7 +193,8 @@
         document.getElementById('top-ui').style.display = "flex";
         document.getElementById('controls-area').style.display = "flex";
         document.getElementById('btn-next').classList.remove('loading');
-        document.getElementById('btn-next').innerText = "SIGUIENTE PINTURA";
+        document.getElementById('btn-next').innerText = "OTRA OBRA";
+        updateTransformBtnState(); // Estado inicial según grilla por defecto
         render();
     }
 
@@ -191,7 +212,7 @@
         startTouches = Array.from(e.touches || [e]);
         if (startTouches.length === 1) {
             if (grids[gIdx] === 'fuga') { dragMode = "fuga"; }
-            else if (grids[gIdx] === 'hibrido-L') { dragMode = "hibrido-L"; }
+            else if (grids[gIdx] === 'comp-L') { dragMode = "comp-L"; }
             else if (grids[gIdx] === 'masas') { dragMode = "masas"; }
             else { dragMode = "pan"; initialImgX = imgX; initialImgY = imgY; }
         } else if (startTouches.length === 2) {
@@ -211,7 +232,7 @@
             if (dragMode === "fuga") {
                 fugaX = (cur[0].clientX - imgX) / rw;
                 fugaY = (cur[0].clientY - imgY) / rh;
-            } else if (dragMode === "hibrido-L") {
+            } else if (dragMode === "comp-L") {
                 interX = Math.max(0, Math.min(1, (cur[0].clientX - imgX) / rw));
                 interY = Math.max(0, Math.min(1, (cur[0].clientY - imgY) / rh));
             } else if (dragMode === "masas") {
@@ -220,9 +241,7 @@
                 let ny = (cur[0].clientY - imgY) / rh;
                 let xNorm = Math.max(0, Math.min(1, (nx - pad) / (1 - 2 * pad)));
                 let yNorm = Math.max(0, Math.min(1, (ny - pad) / (1 - 2 * pad)));
-
                 mBlur = Math.round(xNorm * 40);
-                // El arrastre vertical controla el umbral
                 mThr = Math.round(40 + (yNorm * 175));
             } else if (dragMode === "pan") {
                 imgX = initialImgX + (cur[0].clientX - startTouches[0].clientX);
@@ -246,6 +265,13 @@
 
     function render(time) {
         if (!isRunning) return;
+
+        requestAnimationFrame(render);
+        let now = performance.now();
+        let elapsed = now - then;
+        if (elapsed < fpsInterval) return;
+        then = now - (elapsed % fpsInterval);
+
         canvas.width = window.innerWidth; canvas.height = window.innerHeight;
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         ctx.fillStyle = '#111'; ctx.fillRect(0,0,canvas.width,canvas.height);
@@ -257,19 +283,14 @@
                 ctx.save();
                 ctx.filter = `grayscale(100%) blur(${mBlur}px)`;
                 ctx.drawImage(loadedImage, imgX, imgY, rw, rh);
-
                 const imgData = ctx.getImageData(imgX, imgY, rw, rh);
                 const data = imgData.data;
-
-                // Si está invertido, evaluamos contra el umbral opuesto (255 - mThr)
                 const targetThr = mInvert ? (255 - mThr) : mThr;
-
                 for (let i = 0; i < data.length; i += 4) {
                     let v = data[i] > targetThr ? 255 : 0;
-                    if (mInvert) v = 255 - v; // Invertimos el color final
+                    if (mInvert) v = 255 - v;
                     data[i] = data[i+1] = data[i+2] = v;
                 }
-
                 ctx.filter = 'none';
                 ctx.putImageData(imgData, imgX, imgY);
                 ctx.restore();
@@ -294,19 +315,14 @@
     }
 
     function dibujarGrilla(mode, x, y, w, h, time) {
-        ctx.setLineDash([]);
-        ctx.lineWidth = 1.5;
+        ctx.setLineDash([]); ctx.lineWidth = 1.5;
         if (mode === 'tercios') {
-            for(let i=1; i<3; i++) {
-                line(x+w*i/3, y, x+w*i/3, y+h); line(x, y+h*i/3, x+w, y+h*i/3);
-            }
+            for(let i=1; i<3; i++) { line(x+w*i/3, y, x+w*i/3, y+h); line(x, y+h*i/3, x+w, y+h*i/3); }
         } else if (mode === 'golden') {
-            const p = 0.618;
-            line(x+w*p, y, x+w*p, y+h); line(x+w*(1-p), y, x+w*(1-p), y+h);
+            const p = 0.618; line(x+w*p, y, x+w*p, y+h); line(x+w*(1-p), y, x+w*(1-p), y+h);
             line(x, y+h*p, x+w, y+h*p); line(x, y+h*(1-p), x+w, y+h*(1-p));
         } else if (mode === 'tri-aureos') {
-            line(x, y+h, x+w, y);
-            const dx=w, dy=-h;
+            line(x, y+h, x+w, y); const dx=w, dy=-h;
             const t1 = ((-h)*dy)/(dx*dx+dy*dy); line(x,y, x+t1*dx, y+h+t1*dy);
             const t2 = ((w)*dx)/(dx*dx+dy*dy); line(x+w,y+h, x+t2*dx, y+h+t2*dy);
         } else if (mode === 'fibonacci') {
@@ -329,7 +345,7 @@
                 ctx.strokeStyle = colors[cIdx]; ctx.globalAlpha = 1 - pulse; ctx.stroke(); ctx.globalAlpha = 1;
             }
             ctx.beginPath(); ctx.arc(fx, fy, 5, 0, 7); ctx.fillStyle = colors[cIdx]; ctx.fill();
-        } else if (mode === 'hibrido-L') {
+        } else if (mode === 'comp-L') {
             const ix = x + w * interX, iy = y + h * interY;
             line(x, iy, x + w, iy); line(ix, y, ix, y + h);
             ctx.fillStyle = 'rgba(0,0,0,0.25)';
@@ -347,15 +363,12 @@
             }
             ctx.fillStyle = colors[cIdx]; ctx.beginPath(); ctx.arc(ix, iy, 7, 0, 7); ctx.fill();
         } else if (mode === 'cuadrado') {
-            const s = Math.min(w, h);
-            const ox = (w - s) / 2, oy = (h - s) / 2;
+            const s = Math.min(w, h); const ox = (w - s) / 2, oy = (h - s) / 2;
             ctx.save(); ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
             if (w > h) { ctx.fillRect(x, y, ox, h); ctx.fillRect(x + ox + s, y, ox, h); }
             else { ctx.fillRect(x, y, w, oy); ctx.fillRect(x, y + oy + s, w, oy); }
             ctx.restore(); ctx.strokeRect(x + ox, y + oy, s, s);
-        } else if (mode === 'diagonales') {
-            line(x,y,x+w,y+h);
-        }
+        } else if (mode === 'diagonales') { line(x,y,x+w,y+h); }
     }
 
     function line(x1,y1,x2,y2) { ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.stroke(); }
@@ -365,54 +378,28 @@
 
     document.getElementById('btn-grid').addEventListener('click', (e) => {
         gIdx = (gIdx + 1) % grids.length;
-        if (grids[gIdx] === 'hibrido-L' || grids[gIdx] === 'fuga' || grids[gIdx] === 'masas') {
+        if (grids[gIdx] === 'comp-L' || grids[gIdx] === 'fuga' || grids[gIdx] === 'masas') {
             transformIdx = 0; pulseStartTime = performance.now();
         }
         e.target.textContent = gridLabels[gIdx];
+        updateTransformBtnState(); // Actualizar muteo al cambiar grilla
     });
 
-    document.getElementById('btn-transform').addEventListener('click', () => {
-        if (grids[gIdx] === 'masas') {
-            mInvert = !mInvert;
-            mThr = 255 - mThr; // Reflejamos el valor de luminosidad para mantener la mancha
-        } else {
-            transformIdx = (transformIdx+1)%4;
-        }
+    btnTransform.addEventListener('click', () => {
+        if (grids[gIdx] === 'masas') { mInvert = !mInvert; mThr = 255 - mThr; }
+        else { transformIdx = (transformIdx+1)%4; }
     });
 
     document.getElementById('btn-color').addEventListener('click', () => { cIdx=(cIdx+1)%colors.length; document.getElementById('color-dot').style.background=colors[cIdx]; });
 
-const btnReset = document.getElementById('btn-reset');
-
-    // Manejo de presión (Activa Bypass o Resetea)
+    const btnReset = document.getElementById('btn-reset');
     ['mousedown', 'touchstart'].forEach(evt => btnReset.addEventListener(evt, (e) => {
-        // 1. Intentar forzar Fullscreen (siempre es bueno refrescarlo aquí)
-        if (document.documentElement.requestFullscreen) {
-            document.documentElement.requestFullscreen().catch(() => {});
-        }
-
-        // 2. Lógica de Reset / Bypass
-        if (grids[gIdx] === 'masas') {
-            isBypass = true;
-        } else {
-            if (loadedImage) {
-                centerImage();
-                fugaX = 0.5;
-                fugaY = 0.5;
-                transformIdx = 0;
-                interX = 0.3; // También reseteamos el híbrido
-                interY = 0.3;
-            }
-        }
-
-        // Evitamos que el navegador intente seleccionar el botón como texto
+        if (document.documentElement.requestFullscreen) { document.documentElement.requestFullscreen().catch(() => {}); }
+        if (grids[gIdx] === 'masas') { isBypass = true; }
+        else if (loadedImage) { centerImage(); fugaX = 0.5; fugaY = 0.5; transformIdx = 0; interX = 0.3; interY = 0.3; }
         if (e.cancelable) e.preventDefault();
     }));
-
-    // Al soltar, desactivamos el bypass de masas
-    ['mouseup', 'touchend', 'mouseleave'].forEach(evt => btnReset.addEventListener(evt, () => {
-        isBypass = false;
-    }));
+    ['mouseup', 'touchend', 'mouseleave'].forEach(evt => btnReset.addEventListener(evt, () => { isBypass = false; }));
 </script>
 </body>
 </html>
