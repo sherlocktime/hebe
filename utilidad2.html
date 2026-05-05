@@ -135,7 +135,6 @@
 
     let mBlur = 5, mThr = 127, mInvert = false, isBypass = false;
 
-    // --- NUEVAS VARIABLES PARA GALERIA ---
     let imagesGallery = [];
     let currentIdx = 0;
 
@@ -143,9 +142,24 @@
     let initialImgX = 0, initialImgY = 0, initialScale = 1, initialDist = 0, initialCenter = { x: 0, y: 0 };
     let startTouches = [];
 
+    // --- FUNCIÓN PARA BLOQUEAR PORTRAIT ---
+    function lockPortrait() {
+        if (screen.orientation && screen.orientation.lock) {
+            screen.orientation.lock('portrait').catch(err => {
+                console.log("El bloqueo requiere pantalla completa o no es soportado.");
+            });
+        }
+    }
+
     function toggleFullScreen() {
         if (!document.fullscreenElement) {
-            document.documentElement.requestFullscreen().catch(() => {});
+            document.documentElement.requestFullscreen()
+                .then(() => {
+                    lockPortrait(); // Bloquear después de entrar en fullscreen
+                })
+                .catch(() => {});
+        } else {
+            lockPortrait();
         }
     }
 
@@ -193,8 +207,8 @@
         return newImg;
     }
 
-    // --- MODIFICADO: CARGA MULTIPLE ---
     fileInput.addEventListener('change', (e) => {
+        lockPortrait(); // Llamada al cargar fotos
         const files = Array.from(e.target.files);
         if (files.length === 0) return;
 
@@ -212,7 +226,6 @@
                         masas: resizImage(tempImg, 600)
                     };
                     loadedCount++;
-                    // Mostrar la primera apenas esté lista
                     if (i === 0) {
                         applyImage(0);
                         if (!isRunning) setupView();
@@ -228,10 +241,8 @@
         if (!imagesGallery[idx]) return;
         loadedImage = imagesGallery[idx].full;
         masasImage = imagesGallery[idx].masas;
-        // Esperar un instante a que el objeto Image esté disponible
         setTimeout(() => {
             centerImage();
-            // Reset de puntos interactivos para la nueva foto
             fugaX = 0.5; fugaY = 0.5; interX = 0.3; interY = 0.3; transformIdx = 0;
         }, 100);
     }
@@ -253,7 +264,6 @@
         else { imgScale = H/loadedImage.height; imgY = 0; imgX = (W - (loadedImage.width*imgScale))/2; }
     }
 
-    // --- NAVEGACION ---
     document.getElementById('btn-next').addEventListener('click', () => {
         if (imagesGallery.length < 2) return;
         currentIdx = (currentIdx + 1) % imagesGallery.length;
@@ -267,8 +277,6 @@
     });
 
     document.getElementById('btn-reselect').addEventListener('click', () => fileInput.click());
-
-    // --- EL RESTO DEL CODIGO PERMANECE IGUAL ---
 
     function handleStart(e) {
         if (!isRunning || !loadedImage) return;
@@ -452,12 +460,15 @@
 
     const btnReset = document.getElementById('btn-reset');
     ['mousedown', 'touchstart'].forEach(evt => btnReset.addEventListener(evt, (e) => {
-        if (document.documentElement.requestFullscreen) { document.documentElement.requestFullscreen().catch(() => {}); }
+        toggleFullScreen(); // Asegura fullscreen y llama a lockPortrait()
         if (grids[gIdx] === 'masas') { isBypass = true; }
         else if (loadedImage) { centerImage(); fugaX = 0.5; fugaY = 0.5; transformIdx = 0; interX = 0.3; interY = 0.3; }
         if (e.cancelable) e.preventDefault();
     }));
     ['mouseup', 'touchend', 'mouseleave'].forEach(evt => btnReset.addEventListener(evt, () => { isBypass = false; }));
+
+    // Llamada inicial al cargar la página
+    window.addEventListener('load', lockPortrait);
 </script>
 </body>
 </html>
