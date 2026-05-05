@@ -14,17 +14,6 @@
         #container { position: relative; width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; touch-action: none; }
         canvas { position: absolute; z-index: 2; pointer-events: auto; }
 
-        #top-ui {
-            position: absolute;
-            top: calc(10px + env(safe-area-inset-top, 0px));
-            left: 0; right: 0;
-            z-index: 50;
-            display: none;
-            justify-content: center;
-            gap: 10px;
-            pointer-events: none;
-        }
-
         .controls-area {
             position: fixed;
             bottom: calc(30px + env(safe-area-inset-bottom, 0px));
@@ -67,25 +56,52 @@
         #mainActionBtn { position: absolute; z-index: 60; padding: 18px 40px; font-size: 16px; border-radius: 30px; border: none; background: #FFCC00; color: black; font-weight: bold; cursor: pointer; }
 
         /* Estilo para botones de navegación arriba */
-        .nav-btn {
-            width: 50px;
+        #top-ui {
+                position: absolute;
+                top: calc(10px + env(safe-area-inset-top, 0px));
+                left: 0; right: 0;
+                z-index: 50;
+                display: none;
+                justify-content: center;
+                /* Eliminamos el gap para que se peguen */
+                gap: 0;
+                pointer-events: none;
+            }
+
+        /* Estilo base unificado para los tres botones de arriba */
+        .nav-btn, #btn-reselect {
             height: 44px;
-            border-radius: 12px;
-            background: rgba(0,0,0,0.8);
-            border: 1.5px solid #FFCC00;
-            color: #FFCC00;
+            background: rgba(0, 0, 0, 0.6);
+            border: 1.5px solid rgba(255, 255, 255, 0.3);
+            color: white;
             cursor: pointer;
             pointer-events: auto;
             font-weight: bold;
-            font-size: 18px;
+            backdrop-filter: blur(5px);
+            border-radius: 0;
+            margin-right: -1.5px;
+            transition: opacity 0.2s ease;
         }
+
+        /* Botón Izquierdo */
+        .nav-btn:first-child {
+            width: 50px;
+            font-size: 22px;
+            border-radius: 12px 0 0 12px;
+        }
+
+        /* Botón Central */
         #btn-reselect {
             padding: 0 15px;
-            border-radius: 12px;
-            background: rgba(0,0,0,0.8);
-            border: 1.5px solid #FFCC00;
-            color: #FFCC00;
             font-size: 10px;
+        }
+
+        /* Botón Derecho */
+        .nav-btn:last-child {
+            width: 50px;
+            font-size: 22px;
+            border-radius: 0 12px 12px 0;
+            margin-right: 0;
         }
 
         #fileInput { display: none; }
@@ -99,9 +115,9 @@
     <input type="file" id="fileInput" accept="image/*" multiple>
 
     <div id="top-ui">
-        <button id="btn-prev" class="nav-btn">&lt;</button>
+        <button id="btn-prev" class="nav-btn">&#8249;</button>
         <button id="btn-reselect" class="ui-btn">CARGAR MÁS</button>
-        <button id="btn-next" class="nav-btn">&gt;</button>
+        <button id="btn-next" class="nav-btn">&#8250;</button>
     </div>
 
     <div class="controls-area" id="controls-area">
@@ -122,8 +138,8 @@
     const fileInput = document.getElementById('fileInput');
     const btnTransform = document.getElementById('btn-transform');
 
-    const grids = ['tercios', 'golden', 'tri-aureos', 'masas', 'cuadrado', 'fuga', 'fibonacci', 'comp-L', 'diagonales'];
-    const gridLabels = ['Regla de Tercios', 'Proporción Áurea', 'Triángulos Áureos', 'Balance', 'Cuadrado', 'Punto de Fuga', 'Espiral Áurea', 'Composición L', 'Diagonales'];
+    const grids = ['tercios', 'golden', 'tri-aureos', 'masas', 'cuadrado', 'fuga', 'puntos-fuerza', 'fibonacci', 'comp-L', 'diagonales'];
+    const gridLabels = ['Regla de Tercios', 'Proporción Áurea', 'Triángulos Áureos', 'Balance', 'Cuadrado', 'Punto de Fuga', 'Puntos de Fuerza', 'Espiral Áurea', 'Composición L', 'Diagonales'];
 
     let gIdx = 0, transformIdx = 0, cIdx = 0;
     const colors = ['#FFFFFF', '#FF3B30', '#4CD964', '#FFCC00', '#007AFF'];
@@ -393,6 +409,9 @@
             line(x, y+h, x+w, y); const dx=w, dy=-h;
             const t1 = ((-h)*dy)/(dx*dx+dy*dy); line(x,y, x+t1*dx, y+h+t1*dy);
             const t2 = ((w)*dx)/(dx*dx+dy*dy); line(x+w,y+h, x+t2*dx, y+h+t2*dy);
+        } else if (mode === 'puntos-fuerza') {
+            for(let i=1; i<3; i++) for(let j=1; j<3; j++)
+            { ctx.beginPath(); ctx.arc(x + w*i/3, y + h*j/3, 8, 0, 7); ctx.stroke(); }
         } else if (mode === 'fibonacci') {
             let cX=x, cY=y, cW=w, cH=h;
             for(let i=0; i<7; i++) {
