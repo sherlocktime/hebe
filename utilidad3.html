@@ -5,7 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Estudio de Composición: Museos</title>
     <style>
-        body { margin: 0; padding: 0; background-color: #000; color: white; font-family: sans-serif; overflow: hidden; height: 100dvh; }
+        body {
+            margin: 0; padding: 0; background-color: #000; color: white;
+            font-family: sans-serif; overflow: hidden; height: 100dvh;
+            user-select: none; -webkit-user-select: none; /* Evita selección global */
+            -webkit-touch-callout: none; /* Evita menú contextual en iOS */
+        }
         #container { position: relative; width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; touch-action: none; }
         canvas { position: absolute; z-index: 2; pointer-events: auto; }
 
@@ -13,13 +18,24 @@
             position: absolute;
             top: calc(10px + env(safe-area-inset-top, 0px));
             left: 0; right: 0;
-            z-index: 30;
+            z-index: 50;
+            display: none;
+            justify-content: center;
+            pointer-events: none;
+        }
+
+        .controls-area {
+            position: fixed;
+            bottom: calc(30px + env(safe-area-inset-bottom, 0px));
+            width: 100%;
             display: none;
             gap: 10px;
             padding: 0 15px;
-            pointer-events: none;
+            box-sizing: border-box;
+            z-index: 30;
             justify-content: center;
             align-items: center;
+            pointer-events: none;
         }
 
         .ui-btn {
@@ -36,6 +52,8 @@
             justify-content: center;
             text-transform: uppercase;
             backdrop-filter: blur(5px);
+            user-select: none;
+            -webkit-tap-highlight-color: transparent; /* Evita el recuadro azul al tocar */
         }
 
         #btn-grid { flex: 1; max-width: 180px; padding: 0 10px; }
@@ -44,21 +62,12 @@
         #color-dot { width: 14px; height: 14px; border-radius: 50%; background: white; border: 1.5px solid rgba(255,255,255,0.4); }
         #btn-reset { width: 44px; font-size: 22px; }
 
-        #mainActionBtn { position: absolute; z-index: 40; padding: 18px 40px; font-size: 16px; border-radius: 30px; border: none; background: #FFCC00; color: black; font-weight: bold; cursor: pointer; }
-
-        .controls-area {
-            position: fixed;
-            bottom: calc(30px + env(safe-area-inset-bottom, 0px));
-            width: 100%;
-            display: none;
-            justify-content: center;
-            z-index: 50;
-        }
+        #mainActionBtn { position: absolute; z-index: 60; padding: 18px 40px; font-size: 16px; border-radius: 30px; border: none; background: #FFCC00; color: black; font-weight: bold; cursor: pointer; }
 
         #btn-next {
             width: 200px;
-            height: 48px;
-            border-radius: 24px;
+            height: 44px;
+            border-radius: 22px;
             background: rgba(0,0,0,0.8);
             border: 1.5px solid #FFCC00;
             color: #FFCC00;
@@ -66,7 +75,7 @@
             pointer-events: auto;
             font-weight: bold;
         }
-        
+
         .loading { opacity: 0.5; pointer-events: none; }
     </style>
 </head>
@@ -74,32 +83,38 @@
 
 <div id="container">
     <canvas id="canvas"></canvas>
-    
     <button id="mainActionBtn">EXPLORAR MUSEO</button>
 
     <div id="top-ui">
-        <button id="btn-grid" class="ui-btn">Regla de Tercios</button>
-        <button id="btn-transform" class="ui-btn">ALT</button>
-        <button id="btn-color" class="ui-btn"><div id="color-dot"></div></button>
-        <button id="btn-reset" class="ui-btn">&#8864;</button>
+        <button id="btn-next" class="ui-btn">OTRA PINTURA</button>
     </div>
 
     <div class="controls-area" id="controls-area">
-        <button id="btn-next" class="ui-btn">SIGUIENTE PINTURA</button>
+        <button id="btn-grid" class="ui-btn">Regla de Tercios</button>
+        <button id="btn-transform" class="ui-btn">ROT</button>
+        <button id="btn-color" class="ui-btn"><div id="color-dot"></div></button>
+        <button id="btn-reset" class="ui-btn">&#8864;</button>
     </div>
 </div>
 
 <script>
     const canvas = document.getElementById('canvas');
-    const ctx = canvas.getContext('2d');
+    const ctx = canvas.getContext('2d', { willReadFrequently: true });
 
-    const grids = ['tercios', 'golden', 'tri-aureos', 'puntos-fuerza', 'cuadrado', 'fuga', 'fibonacci', 'simetria', 'diagonales'];
-    const gridLabels = ['Regla de Tercios', 'Proporción Áurea', 'Triángulos Áureos', 'Puntos de Fuerza', 'Encuadre Cuadrado', '1 Punto de Fuga', 'Espiral Áurea', 'Simetría Central', 'Diagonales'];
+    const grids = ['tercios', 'golden', 'tri-aureos', 'masas', 'cuadrado', 'fuga', 'fibonacci', 'hibrido-L', 'diagonales'];
+    const gridLabels = ['Regla de Tercios', 'Proporción Áurea', 'Triángulos Áureos', 'Masas (Notan)', 'Encuadre Cuadrado', '1 Punto de Fuga', 'Espiral Áurea', 'Híbrido en L', 'Diagonales'];
+
     let gIdx = 0, transformIdx = 0, cIdx = 0;
     const colors = ['#FFFFFF', '#FF3B30', '#4CD964', '#FFCC00', '#007AFF'];
 
     let isRunning = false, isDragging = false, dragMode = "none";
     let fugaX = 0.5, fugaY = 0.5;
+    let interX = 0.3, interY = 0.3;
+    let pulseStartTime = 0;
+
+    // Variables Modo Masas
+    let mBlur = 5, mThr = 127, mInvert = false, isBypass = false;
+
     let loadedImage = null, imgX = 0, imgY = 0, imgScale = 1;
     let initialImgX = 0, initialImgY = 0, initialScale = 1, initialDist = 0, initialCenter = { x: 0, y: 0 };
     let startTouches = [];
@@ -123,9 +138,8 @@
             const data = await response.json();
             const artworks = data.data.filter(a => a.image_id);
             const art = artworks[Math.floor(Math.random() * artworks.length)];
-            
             const imgUrl = `https://www.artic.edu/iiif/2/${art.image_id}/full/600,/0/default.jpg`;
-            
+
             const tempImg = new Image();
             tempImg.crossOrigin = "anonymous";
             tempImg.onload = () => {
@@ -160,7 +174,6 @@
         document.getElementById('controls-area').style.display = "flex";
         document.getElementById('btn-next').classList.remove('loading');
         document.getElementById('btn-next').innerText = "SIGUIENTE PINTURA";
-        if (screen.orientation && screen.orientation.lock) screen.orientation.lock('portrait').catch(()=>{});
         render();
     }
 
@@ -178,6 +191,8 @@
         startTouches = Array.from(e.touches || [e]);
         if (startTouches.length === 1) {
             if (grids[gIdx] === 'fuga') { dragMode = "fuga"; }
+            else if (grids[gIdx] === 'hibrido-L') { dragMode = "hibrido-L"; }
+            else if (grids[gIdx] === 'masas') { dragMode = "masas"; }
             else { dragMode = "pan"; initialImgX = imgX; initialImgY = imgY; }
         } else if (startTouches.length === 2) {
             dragMode = "zoom";
@@ -190,18 +205,32 @@
     function handleMove(e) {
         if (!isDragging || !isRunning || !loadedImage) return;
         const cur = Array.from(e.touches || [e]);
+        const rw = loadedImage.width * imgScale, rh = loadedImage.height * imgScale;
+
         if (cur.length === 1 && startTouches.length === 1) {
             if (dragMode === "fuga") {
-                fugaX = (cur[0].clientX - imgX) / (loadedImage.width * imgScale);
-                fugaY = (cur[0].clientY - imgY) / (loadedImage.height * imgScale);
+                fugaX = (cur[0].clientX - imgX) / rw;
+                fugaY = (cur[0].clientY - imgY) / rh;
+            } else if (dragMode === "hibrido-L") {
+                interX = Math.max(0, Math.min(1, (cur[0].clientX - imgX) / rw));
+                interY = Math.max(0, Math.min(1, (cur[0].clientY - imgY) / rh));
+            } else if (dragMode === "masas") {
+                const pad = 0.1;
+                let nx = (cur[0].clientX - imgX) / rw;
+                let ny = (cur[0].clientY - imgY) / rh;
+                let xNorm = Math.max(0, Math.min(1, (nx - pad) / (1 - 2 * pad)));
+                let yNorm = Math.max(0, Math.min(1, (ny - pad) / (1 - 2 * pad)));
+
+                mBlur = Math.round(xNorm * 40);
+                // El arrastre vertical controla el umbral
+                mThr = Math.round(40 + (yNorm * 175));
             } else if (dragMode === "pan") {
                 imgX = initialImgX + (cur[0].clientX - startTouches[0].clientX);
                 imgY = initialImgY + (cur[0].clientY - startTouches[0].clientY);
             }
         } else if (cur.length === 2) {
             const newDist = Math.hypot(cur[0].clientX - cur[1].clientX, cur[0].clientY - cur[1].clientY);
-            const scaleFactor = newDist / initialDist;
-            imgScale = Math.max(0.1, Math.min(10, initialScale * scaleFactor));
+            imgScale = Math.max(0.1, Math.min(10, initialScale * (newDist / initialDist)));
             const newCenter = { x: (cur[0].clientX + cur[1].clientX)/2, y: (cur[0].clientY + cur[1].clientY)/2 };
             imgX = initialImgX + (newCenter.x - initialCenter.x);
             imgY = initialImgY + (newCenter.y - initialCenter.y);
@@ -215,15 +244,39 @@
     window.addEventListener('mousemove', (e)=>isDragging && handleMove(e));
     window.addEventListener('mouseup', ()=>isDragging=false);
 
-    function render() {
+    function render(time) {
         if (!isRunning) return;
         canvas.width = window.innerWidth; canvas.height = window.innerHeight;
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         ctx.fillStyle = '#111'; ctx.fillRect(0,0,canvas.width,canvas.height);
-        
+
         if (loadedImage) {
-            const rw = loadedImage.width * imgScale, rh = loadedImage.height * imgScale;
-            ctx.drawImage(loadedImage, imgX, imgY, rw, rh);
+            const rw = Math.round(loadedImage.width * imgScale), rh = Math.round(loadedImage.height * imgScale);
+
+            if (grids[gIdx] === 'masas' && !isBypass) {
+                ctx.save();
+                ctx.filter = `grayscale(100%) blur(${mBlur}px)`;
+                ctx.drawImage(loadedImage, imgX, imgY, rw, rh);
+
+                const imgData = ctx.getImageData(imgX, imgY, rw, rh);
+                const data = imgData.data;
+
+                // Si está invertido, evaluamos contra el umbral opuesto (255 - mThr)
+                const targetThr = mInvert ? (255 - mThr) : mThr;
+
+                for (let i = 0; i < data.length; i += 4) {
+                    let v = data[i] > targetThr ? 255 : 0;
+                    if (mInvert) v = 255 - v; // Invertimos el color final
+                    data[i] = data[i+1] = data[i+2] = v;
+                }
+
+                ctx.filter = 'none';
+                ctx.putImageData(imgData, imgX, imgY);
+                ctx.restore();
+            } else {
+                ctx.drawImage(loadedImage, imgX, imgY, rw, rh);
+            }
+
             ctx.save();
             ctx.beginPath(); ctx.rect(imgX, imgY, rw, rh); ctx.clip();
             ctx.save();
@@ -232,7 +285,7 @@
             else if (transformIdx===2) { ctx.translate(2*cx, 2*cy); ctx.rotate(Math.PI); }
             else if (transformIdx===3) { ctx.translate(0, 2*cy); ctx.scale(1,-1); }
             ctx.strokeStyle = colors[cIdx]; ctx.lineWidth = 1.5;
-            dibujarGrilla(grids[gIdx], imgX, imgY, rw, rh);
+            dibujarGrilla(grids[gIdx], imgX, imgY, rw, rh, time);
             ctx.restore();
             ctx.restore();
             ctx.strokeStyle = colors[cIdx]; ctx.lineWidth = 2; ctx.strokeRect(imgX, imgY, rw, rh);
@@ -240,10 +293,13 @@
         requestAnimationFrame(render);
     }
 
-    function dibujarGrilla(mode, x, y, w, h) {
+    function dibujarGrilla(mode, x, y, w, h, time) {
         ctx.setLineDash([]);
+        ctx.lineWidth = 1.5;
         if (mode === 'tercios') {
-            for(let i=1; i<3; i++) { line(x+w*i/3, y, x+w*i/3, y+h); line(x, y+h*i/3, x+w, y+h*i/3); }
+            for(let i=1; i<3; i++) {
+                line(x+w*i/3, y, x+w*i/3, y+h); line(x, y+h*i/3, x+w, y+h*i/3);
+            }
         } else if (mode === 'golden') {
             const p = 0.618;
             line(x+w*p, y, x+w*p, y+h); line(x+w*(1-p), y, x+w*(1-p), y+h);
@@ -251,8 +307,8 @@
         } else if (mode === 'tri-aureos') {
             line(x, y+h, x+w, y);
             const dx=w, dy=-h;
-            const t1 = ((0)*dx + (-h)*dy)/(dx*dx+dy*dy); line(x,y, x+t1*dx, y+h+t1*dy);
-            const t2 = ((w)*dx + (0)*dy)/(dx*dx+dy*dy); line(x+w,y+h, x+t2*dx, y+h+t2*dy);
+            const t1 = ((-h)*dy)/(dx*dx+dy*dy); line(x,y, x+t1*dx, y+h+t1*dy);
+            const t2 = ((w)*dx)/(dx*dx+dy*dy); line(x+w,y+h, x+t2*dx, y+h+t2*dy);
         } else if (mode === 'fibonacci') {
             let cX=x, cY=y, cW=w, cH=h;
             for(let i=0; i<7; i++) {
@@ -263,23 +319,42 @@
                 else if (i%4===3) { ctx.strokeRect(cX, cY, s, cH); cX+=s; cW-=s; }
             }
         } else if (mode === 'fuga') {
-            const fx=x+w*fugaX, fy=y+h*fugaY;
-            // Guías punteadas (Horizonte y Vertical)
-            ctx.setLineDash([5, 5]);
-            line(x, fy, x+w, fy); 
-            line(fx, y, fx, y+h);
-            ctx.setLineDash([]);
-            // Líneas de fuga
-            line(x,y,fx,fy); line(x+w,y,fx,fy); line(x,y+h,fx,fy); line(x+w,y+h,fx,fy);
-            ctx.beginPath(); ctx.arc(fx,fy,5,0,7); ctx.fillStyle = colors[cIdx]; ctx.fill();
-        } else if (mode === 'puntos-fuerza') {
-            for(let i=1; i<3; i++) for(let j=1; j<3; j++) { ctx.beginPath(); ctx.arc(x+w*i/3, y+h*j/3, 8, 0, 7); ctx.stroke(); }
+            const fx = x + w * fugaX, fy = y + h * fugaY;
+            ctx.setLineDash([5, 5]); line(x, fy, x + w, fy); line(fx, y, fx, y + h);
+            ctx.setLineDash([]); line(x, y, fx, fy); line(x + w, y, fx, fy); line(x, y + h, fx, fy); line(x + w, y + h, fx, fy);
+            const elapsed = time - pulseStartTime;
+            if (elapsed < 1000) {
+                const pulse = Math.abs(Math.sin(elapsed / 200));
+                ctx.beginPath(); ctx.arc(fx, fy, 5 + pulse * 10, 0, 7);
+                ctx.strokeStyle = colors[cIdx]; ctx.globalAlpha = 1 - pulse; ctx.stroke(); ctx.globalAlpha = 1;
+            }
+            ctx.beginPath(); ctx.arc(fx, fy, 5, 0, 7); ctx.fillStyle = colors[cIdx]; ctx.fill();
+        } else if (mode === 'hibrido-L') {
+            const ix = x + w * interX, iy = y + h * interY;
+            line(x, iy, x + w, iy); line(ix, y, ix, y + h);
+            ctx.fillStyle = 'rgba(0,0,0,0.25)';
+            const aTL = interX * interY, aTR = (1 - interX) * interY, aBL = interX * (1 - interY), aBR = (1 - interX) * (1 - interY);
+            const maxA = Math.max(aTL, aTR, aBL, aBR);
+            if (aTL !== maxA) ctx.fillRect(x, y, ix - x, iy - y);
+            if (aTR !== maxA) ctx.fillRect(ix, y, (x + w) - ix, iy - y);
+            if (aBL !== maxA) ctx.fillRect(x, iy, ix - x, (y + h) - iy);
+            if (aBR !== maxA) ctx.fillRect(ix, iy, (x + w) - ix, (y + h) - iy);
+            const elapsed = time - pulseStartTime;
+            if (elapsed < 1000) {
+                const pulse = Math.abs(Math.sin(elapsed/200));
+                ctx.beginPath(); ctx.arc(ix, iy, 7 + pulse*10, 0, 7);
+                ctx.strokeStyle = colors[cIdx]; ctx.globalAlpha = 1-pulse; ctx.stroke(); ctx.globalAlpha = 1;
+            }
+            ctx.fillStyle = colors[cIdx]; ctx.beginPath(); ctx.arc(ix, iy, 7, 0, 7); ctx.fill();
         } else if (mode === 'cuadrado') {
-            const s = Math.min(w,h); ctx.strokeRect(x+(w-s)/2, y+(h-s)/2, s, s);
-        } else if (mode === 'simetria') {
-            line(x+w/2, y, x+w/2, y+h); line(x, y+h/2, x+w, y+h/2);
+            const s = Math.min(w, h);
+            const ox = (w - s) / 2, oy = (h - s) / 2;
+            ctx.save(); ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+            if (w > h) { ctx.fillRect(x, y, ox, h); ctx.fillRect(x + ox + s, y, ox, h); }
+            else { ctx.fillRect(x, y, w, oy); ctx.fillRect(x, y + oy + s, w, oy); }
+            ctx.restore(); ctx.strokeRect(x + ox, y + oy, s, s);
         } else if (mode === 'diagonales') {
-            line(x,y,x+w,y+h); line(x+w,y,x,y+h);
+            line(x,y,x+w,y+h);
         }
     }
 
@@ -287,22 +362,57 @@
 
     document.getElementById('mainActionBtn').addEventListener('click', () => { toggleFullScreen(); loadMuseumArt(); });
     document.getElementById('btn-next').addEventListener('click', loadMuseumArt);
-    
-    document.getElementById('btn-grid').addEventListener('click', (e) => { 
-        gIdx = (gIdx+1)%grids.length; 
-        transformIdx = 0; // RESET TRANSFORM AL CAMBIAR GRilla
-        e.target.textContent = gridLabels[gIdx]; 
+
+    document.getElementById('btn-grid').addEventListener('click', (e) => {
+        gIdx = (gIdx + 1) % grids.length;
+        if (grids[gIdx] === 'hibrido-L' || grids[gIdx] === 'fuga' || grids[gIdx] === 'masas') {
+            transformIdx = 0; pulseStartTime = performance.now();
+        }
+        e.target.textContent = gridLabels[gIdx];
     });
 
-    document.getElementById('btn-transform').addEventListener('click', () => transformIdx = (transformIdx+1)%4);
-    document.getElementById('btn-color').addEventListener('click', () => { cIdx=(cIdx+1)%colors.length; document.getElementById('color-dot').style.background=colors[cIdx]; });
-    
-    document.getElementById('btn-reset').addEventListener('click', () => { 
-        toggleFullScreen();
-        centerImage(); 
-        transformIdx=0; 
-        fugaX = 0.5; fugaY = 0.5;
+    document.getElementById('btn-transform').addEventListener('click', () => {
+        if (grids[gIdx] === 'masas') {
+            mInvert = !mInvert;
+            mThr = 255 - mThr; // Reflejamos el valor de luminosidad para mantener la mancha
+        } else {
+            transformIdx = (transformIdx+1)%4;
+        }
     });
+
+    document.getElementById('btn-color').addEventListener('click', () => { cIdx=(cIdx+1)%colors.length; document.getElementById('color-dot').style.background=colors[cIdx]; });
+
+const btnReset = document.getElementById('btn-reset');
+
+    // Manejo de presión (Activa Bypass o Resetea)
+    ['mousedown', 'touchstart'].forEach(evt => btnReset.addEventListener(evt, (e) => {
+        // 1. Intentar forzar Fullscreen (siempre es bueno refrescarlo aquí)
+        if (document.documentElement.requestFullscreen) {
+            document.documentElement.requestFullscreen().catch(() => {});
+        }
+
+        // 2. Lógica de Reset / Bypass
+        if (grids[gIdx] === 'masas') {
+            isBypass = true;
+        } else {
+            if (loadedImage) {
+                centerImage();
+                fugaX = 0.5;
+                fugaY = 0.5;
+                transformIdx = 0;
+                interX = 0.3; // También reseteamos el híbrido
+                interY = 0.3;
+            }
+        }
+
+        // Evitamos que el navegador intente seleccionar el botón como texto
+        if (e.cancelable) e.preventDefault();
+    }));
+
+    // Al soltar, desactivamos el bypass de masas
+    ['mouseup', 'touchend', 'mouseleave'].forEach(evt => btnReset.addEventListener(evt, () => {
+        isBypass = false;
+    }));
 </script>
 </body>
 </html>
