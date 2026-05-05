@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Estudio de Composición: Pro</title>
+    <title>Estudio de Composición: Dispositivo</title>
     <style>
         body {
             margin: 0; padding: 0; background-color: #000; color: white;
@@ -21,6 +21,7 @@
             z-index: 50;
             display: none;
             justify-content: center;
+            gap: 10px;
             pointer-events: none;
         }
 
@@ -54,7 +55,7 @@
             backdrop-filter: blur(5px);
             user-select: none;
             -webkit-tap-highlight-color: transparent;
-            transition: opacity 0.2s ease; /* Transición suave para el muteo */
+            transition: opacity 0.2s ease;
         }
 
         #btn-grid { flex: 1; max-width: 180px; padding: 0 10px; }
@@ -65,17 +66,28 @@
 
         #mainActionBtn { position: absolute; z-index: 60; padding: 18px 40px; font-size: 16px; border-radius: 30px; border: none; background: #FFCC00; color: black; font-weight: bold; cursor: pointer; }
 
-        #btn-next {
-            width: 200px;
+        /* Estilo para botones de navegación arriba */
+        .nav-btn {
+            width: 50px;
             height: 44px;
-            border-radius: 22px;
+            border-radius: 12px;
             background: rgba(0,0,0,0.8);
             border: 1.5px solid #FFCC00;
             color: #FFCC00;
             cursor: pointer;
             pointer-events: auto;
             font-weight: bold;
+            font-size: 18px;
         }
+        #btn-reselect {
+            padding: 0 15px;
+            border-radius: 12px;
+            background: rgba(0,0,0,0.8);
+            border: 1.5px solid #FFCC00;
+            color: #FFCC00;
+            font-size: 10px;
+        }
+
         #fileInput { display: none; }
     </style>
 </head>
@@ -83,11 +95,13 @@
 
 <div id="container">
     <canvas id="canvas"></canvas>
-    <button id="mainActionBtn">SELECCIONAR FOTO</button>
-    <input type="file" id="fileInput" accept="image/*">
+    <button id="mainActionBtn">SELECCIONAR FOTOS</button>
+    <input type="file" id="fileInput" accept="image/*" multiple>
 
     <div id="top-ui">
-        <button id="btn-next" class="ui-btn">CAMBIAR IMAGEN</button>
+        <button id="btn-prev" class="nav-btn">&lt;</button>
+        <button id="btn-reselect" class="ui-btn">CARGAR MÁS</button>
+        <button id="btn-next" class="nav-btn">&gt;</button>
     </div>
 
     <div class="controls-area" id="controls-area">
@@ -121,6 +135,10 @@
 
     let mBlur = 5, mThr = 127, mInvert = false, isBypass = false;
 
+    // --- NUEVAS VARIABLES PARA GALERIA ---
+    let imagesGallery = [];
+    let currentIdx = 0;
+
     let loadedImage = null, masasImage = null, imgX = 0, imgY = 0, imgScale = 1;
     let initialImgX = 0, initialImgY = 0, initialScale = 1, initialDist = 0, initialCenter = { x: 0, y: 0 };
     let startTouches = [];
@@ -131,12 +149,9 @@
         }
     }
 
-    // --- NUEVO: GESTIÓN VISUAL DEL BOTÓN MODO ---
     function updateTransformBtnState() {
         const currentGrid = grids[gIdx];
-        // Triángulos Áureos, Masas (Balance), Fibonacci (Espiral), Diagonales
         const isUseful = ['tri-aureos', 'masas', 'fibonacci', 'diagonales'].includes(currentGrid);
-
         if (isUseful) {
             btnTransform.style.opacity = "1";
             btnTransform.style.pointerEvents = "auto";
@@ -146,63 +161,87 @@
         }
     }
 
-    // --- FUNCIÓN DE CARGA CON AUTO-ROTACIÓN ---
-        function resizImage(img, maxDim) {
-            let w = img.width;
-            let h = img.height;
-            let rotate = false;
-            if (w > h) {
-                rotate = true;
-                let temp = w;
-                w = h;
-                h = temp;
-            }
-            if (w > h) {
-                if (w > maxDim) { h *= maxDim / w; w = maxDim; }
-            } else {
-                if (h > maxDim) { w *= maxDim / h; h = maxDim; }
-            }
-            const tCanvas = document.createElement('canvas');
-            tCanvas.width = w;
-            tCanvas.height = h;
-            const tCtx = tCanvas.getContext('2d');
-
-            if (rotate) {
-                tCtx.translate(w / 2, h / 2);
-                tCtx.rotate(Math.PI / 2);
-                tCtx.drawImage(img, -h / 2, -w / 2, h, w);
-            } else {
-                tCtx.drawImage(img, 0, 0, w, h);
-            }
-            const newImg = new Image();
-            newImg.src = tCanvas.toDataURL('image/jpeg', 0.8);
-            return newImg;
+    function resizImage(img, maxDim) {
+        let w = img.width;
+        let h = img.height;
+        let rotate = false;
+        if (w > h) {
+            rotate = true;
+            let temp = w;
+            w = h;
+            h = temp;
         }
+        if (w > h) {
+            if (w > maxDim) { h *= maxDim / w; w = maxDim; }
+        } else {
+            if (h > maxDim) { w *= maxDim / h; h = maxDim; }
+        }
+        const tCanvas = document.createElement('canvas');
+        tCanvas.width = w;
+        tCanvas.height = h;
+        const tCtx = tCanvas.getContext('2d');
 
-        fileInput.addEventListener('change', (e) => {
-            const file = e.target.files[0];
-            if (!file) return;
+        if (rotate) {
+            tCtx.translate(w / 2, h / 2);
+            tCtx.rotate(Math.PI / 2);
+            tCtx.drawImage(img, -h / 2, -w / 2, h, w);
+        } else {
+            tCtx.drawImage(img, 0, 0, w, h);
+        }
+        const newImg = new Image();
+        newImg.src = tCanvas.toDataURL('image/jpeg', 0.8);
+        return newImg;
+    }
+
+    // --- MODIFICADO: CARGA MULTIPLE ---
+    fileInput.addEventListener('change', (e) => {
+        const files = Array.from(e.target.files);
+        if (files.length === 0) return;
+
+        imagesGallery = [];
+        currentIdx = 0;
+        let loadedCount = 0;
+
+        files.forEach((file, i) => {
             const reader = new FileReader();
             reader.onload = (event) => {
                 const tempImg = new Image();
                 tempImg.onload = () => {
-                    // Ahora ambas versiones vendrán ya rotadas si eran apaisadas
-                    loadedImage = resizImage(tempImg, 1200);
-                    masasImage = resizImage(tempImg, 600);
-                    setTimeout(setupView, 50);
+                    imagesGallery[i] = {
+                        full: resizImage(tempImg, 1200),
+                        masas: resizImage(tempImg, 600)
+                    };
+                    loadedCount++;
+                    // Mostrar la primera apenas esté lista
+                    if (i === 0) {
+                        applyImage(0);
+                        if (!isRunning) setupView();
+                    }
                 };
                 tempImg.src = event.target.result;
             };
             reader.readAsDataURL(file);
         });
+    });
+
+    function applyImage(idx) {
+        if (!imagesGallery[idx]) return;
+        loadedImage = imagesGallery[idx].full;
+        masasImage = imagesGallery[idx].masas;
+        // Esperar un instante a que el objeto Image esté disponible
+        setTimeout(() => {
+            centerImage();
+            // Reset de puntos interactivos para la nueva foto
+            fugaX = 0.5; fugaY = 0.5; interX = 0.3; interY = 0.3; transformIdx = 0;
+        }, 100);
+    }
 
     function setupView() {
-        centerImage();
         isRunning = true;
         document.getElementById('mainActionBtn').style.display = "none";
         document.getElementById('top-ui').style.display = "flex";
         document.getElementById('controls-area').style.display = "flex";
-        updateTransformBtnState(); // Actualizar al iniciar
+        updateTransformBtnState();
         render();
     }
 
@@ -213,6 +252,23 @@
         if (ir > W/H) { imgScale = W/loadedImage.width; imgX = 0; imgY = (H - (loadedImage.height*imgScale))/2; }
         else { imgScale = H/loadedImage.height; imgY = 0; imgX = (W - (loadedImage.width*imgScale))/2; }
     }
+
+    // --- NAVEGACION ---
+    document.getElementById('btn-next').addEventListener('click', () => {
+        if (imagesGallery.length < 2) return;
+        currentIdx = (currentIdx + 1) % imagesGallery.length;
+        applyImage(currentIdx);
+    });
+
+    document.getElementById('btn-prev').addEventListener('click', () => {
+        if (imagesGallery.length < 2) return;
+        currentIdx = (currentIdx - 1 + imagesGallery.length) % imagesGallery.length;
+        applyImage(currentIdx);
+    });
+
+    document.getElementById('btn-reselect').addEventListener('click', () => fileInput.click());
+
+    // --- EL RESTO DEL CODIGO PERMANECE IGUAL ---
 
     function handleStart(e) {
         if (!isRunning || !loadedImage) return;
@@ -271,9 +327,8 @@
     window.addEventListener('mousemove', (e)=>isDragging && handleMove(e));
     window.addEventListener('mouseup', ()=>isDragging=false);
 
-function render(time) {
+    function render(time) {
         if (!isRunning) return;
-
         requestAnimationFrame(render);
         let now = performance.now();
         let elapsed = now - then;
@@ -286,7 +341,6 @@ function render(time) {
 
         if (loadedImage) {
             const rw = Math.round(loadedImage.width * imgScale), rh = Math.round(loadedImage.height * imgScale);
-
             if (grids[gIdx] === 'masas' && !isBypass && masasImage) {
                 ctx.save();
                 ctx.filter = `grayscale(100%) blur(${mBlur}px)`;
@@ -305,7 +359,6 @@ function render(time) {
             } else {
                 ctx.drawImage(loadedImage, imgX, imgY, rw, rh);
             }
-
             ctx.save();
             ctx.beginPath(); ctx.rect(imgX, imgY, rw, rh); ctx.clip();
             ctx.save();
@@ -319,7 +372,6 @@ function render(time) {
             ctx.restore();
             ctx.strokeStyle = colors[cIdx]; ctx.lineWidth = 2; ctx.strokeRect(imgX, imgY, rw, rh);
         }
-        requestAnimationFrame(render);
     }
 
     function dibujarGrilla(mode, x, y, w, h, time) {
@@ -381,7 +433,6 @@ function render(time) {
     function line(x1,y1,x2,y2) { ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.stroke(); }
 
     document.getElementById('mainActionBtn').addEventListener('click', () => { toggleFullScreen(); fileInput.click(); });
-    document.getElementById('btn-next').addEventListener('click', () => fileInput.click());
 
     document.getElementById('btn-grid').addEventListener('click', (e) => {
         gIdx = (gIdx + 1) % grids.length;
@@ -389,7 +440,7 @@ function render(time) {
             transformIdx = 0; pulseStartTime = performance.now();
         }
         e.target.textContent = gridLabels[gIdx];
-        updateTransformBtnState(); // Actualizar al cambiar grilla
+        updateTransformBtnState();
     });
 
     btnTransform.addEventListener('click', () => {
