@@ -109,7 +109,6 @@
             cursor: pointer;
         }
 
-        /* Estilo para botones de navegación arriba */
         #top-ui {
             position: absolute;
             top: calc(10px + env(safe-area-inset-top, 0px));
@@ -118,12 +117,10 @@
             z-index: 50;
             display: none;
             justify-content: center;
-            /* Eliminamos el gap para que se peguen */
             gap: 0;
             pointer-events: none;
         }
 
-        /* Estilo base unificado para los tres botones de arriba */
         .nav-btn,
         #btn-reselect {
             height: 44px;
@@ -139,20 +136,17 @@
             transition: opacity 0.2s ease;
         }
 
-        /* Botón Izquierdo */
         .nav-btn:first-child {
             width: 50px;
             font-size: 22px;
             border-radius: 12px 0 0 12px;
         }
 
-        /* Botón Central */
         #btn-reselect {
             padding: 0 15px;
             font-size: 10px;
         }
 
-        /* Botón Derecho */
         .nav-btn:last-child {
             width: 50px;
             font-size: 22px;
@@ -199,15 +193,15 @@
         const fileInput = document.getElementById('fileInput');
         const btnTransform = document.getElementById('btn-transform');
 
-        const grids = ['tercios', 'golden', 'tri-aureos', 'masas', 'cuadrado', 'fuga', 'horizonte', 'puntos-fuerza', 'fibonacci', 'comp-L', 'diagonales'];
-        const gridLabels = ['Regla de Tercios', 'Proporción Áurea', 'Triángulos Áureos', 'Balance', 'Cuadrado', 'Punto de Fuga', 'Horizonte', 'Puntos de Fuerza', 'Espiral Áurea', 'Composición L', 'Diagonales'];
+        const grids = ['tercios', 'golden', 'tri-aureos', 'fibonacci', 'diagonales', 'fuga', 'horizonte', 'comp-L', 'masas', 'cuadrado'];
+        const gridLabels = ['tercios', 'golden', 'tri-aureos', 'fibonacci', 'diagonales', 'fuga', 'horizonte', 'comp-L', 'masas', 'cuadrado'];
 
         let gIdx = 0, transformIdx = 0, cIdx = 0;
         const colors = ['#FFFFFF', '#FF3B30', '#4CD964', '#FFCC00', '#007AFF'];
 
         let isRunning = false, isDragging = false, dragMode = "none";
-        let horY = 0.5; // Posición inicial áurea: 0.618
-        let horMode = "H"; // "H" para suelo, "V" para pared
+        let horY = 0.5;
+        let horMode = "H";
         let fugaX = 0.5, fugaY = 0.5;
         let interX = 0.3, interY = 0.3;
         let pulseStartTime = 0;
@@ -221,7 +215,6 @@
         let initialImgX = 0, initialImgY = 0, initialScale = 1, initialDist = 0, initialCenter = { x: 0, y: 0 };
         let startTouches = [];
 
-        // --- FUNCIÓN PARA BLOQUEAR PORTRAIT ---
         function lockPortrait() {
             if (screen.orientation && screen.orientation.lock) {
                 screen.orientation.lock('portrait').catch(err => {
@@ -234,7 +227,7 @@
             if (!document.fullscreenElement) {
                 document.documentElement.requestFullscreen()
                     .then(() => {
-                        lockPortrait(); // Bloquear después de entrar en fullscreen
+                        lockPortrait();
                     })
                     .catch(() => { });
             } else {
@@ -244,7 +237,8 @@
 
         function updateTransformBtnState() {
             const currentGrid = grids[gIdx];
-            const isUseful = ['tri-aureos', 'masas', 'fibonacci', 'diagonales', 'horizonte'].includes(currentGrid);
+            // 'tercios' ahora usa el botón transform para alternar modo líneas/puntos
+            const isUseful = ['tercios', 'tri-aureos', 'masas', 'fibonacci', 'diagonales', 'horizonte'].includes(currentGrid);
             if (isUseful) {
                 btnTransform.style.opacity = "1";
                 btnTransform.style.pointerEvents = "auto";
@@ -287,7 +281,7 @@
         }
 
         fileInput.addEventListener('change', (e) => {
-            lockPortrait(); // Llamada al cargar fotos
+            lockPortrait();
             const files = Array.from(e.target.files);
             if (files.length === 0) return;
 
@@ -388,7 +382,6 @@
                     if (horMode === "H") {
                         horY = Math.max(0, Math.min(1, (cur[0].clientY - imgY) / rh));
                     } else {
-                        // Reutilizamos fugaX para no crear mil variables, o crea una horX
                         fugaX = Math.max(0, Math.min(1, (cur[0].clientX - imgX) / rw));
                     }
                 } else if (dragMode === "comp-L") {
@@ -458,9 +451,14 @@
                 ctx.beginPath(); ctx.rect(imgX, imgY, rw, rh); ctx.clip();
                 ctx.save();
                 const cx = imgX + rw / 2, cy = imgY + rh / 2;
-                if (transformIdx === 1) { ctx.translate(2 * cx, 0); ctx.scale(-1, 1); }
-                else if (transformIdx === 2) { ctx.translate(2 * cx, 2 * cy); ctx.rotate(Math.PI); }
-                else if (transformIdx === 3) { ctx.translate(0, 2 * cy); ctx.scale(1, -1); }
+                
+                // Aplicar transformaciones solo si NO es modo tercios o si es modo tercios y estamos en modo líneas
+                if (grids[gIdx] !== 'tercios') {
+                    if (transformIdx === 1) { ctx.translate(2 * cx, 0); ctx.scale(-1, 1); }
+                    else if (transformIdx === 2) { ctx.translate(2 * cx, 2 * cy); ctx.rotate(Math.PI); }
+                    else if (transformIdx === 3) { ctx.translate(0, 2 * cy); ctx.scale(1, -1); }
+                }
+
                 ctx.strokeStyle = colors[cIdx]; ctx.lineWidth = 1.5;
                 dibujarGrilla(grids[gIdx], imgX, imgY, rw, rh, time);
                 ctx.restore();
@@ -471,18 +469,29 @@
 
         function dibujarGrilla(mode, x, y, w, h, time) {
             ctx.setLineDash([]); ctx.lineWidth = 1.5;
+
             if (mode === 'tercios') {
-                for (let i = 1; i < 3; i++) { line(x + w * i / 3, y, x + w * i / 3, y + h); line(x, y + h * i / 3, x + w, y + h * i / 3); }
+                // Si transformIdx es par (0, 2), dibuja líneas. Si es impar (1, 3), dibuja puntos.
+                if (transformIdx % 2 === 0) {
+                    for (let i = 1; i < 3; i++) { 
+                        line(x + w * i / 3, y, x + w * i / 3, y + h); 
+                        line(x, y + h * i / 3, x + w, y + h * i / 3); 
+                    }
+                } else {
+                    for (let i = 1; i < 3; i++) for (let j = 1; j < 3; j++) { 
+                        ctx.beginPath(); 
+                        ctx.arc(x + w * i / 3, y + h * j / 3, 8, 0, 7); 
+                        ctx.stroke(); 
+                    }
+                }
             } else if (mode === 'golden') {
-                const p = 0.618; line(x + w * p, y, x + w * p, y + h); line(x + w * (1 - p), y, x + w * (1 - p), y + h);
+                const p = 0.618; 
+                line(x + w * p, y, x + w * p, y + h); line(x + w * (1 - p), y, x + w * (1 - p), y + h);
                 line(x, y + h * p, x + w, y + h * p); line(x, y + h * (1 - p), x + w, y + h * (1 - p));
             } else if (mode === 'tri-aureos') {
                 line(x, y + h, x + w, y); const dx = w, dy = -h;
                 const t1 = ((-h) * dy) / (dx * dx + dy * dy); line(x, y, x + t1 * dx, y + h + t1 * dy);
                 const t2 = ((w) * dx) / (dx * dx + dy * dy); line(x + w, y + h, x + t2 * dx, y + h + t2 * dy);
-            } else if (mode === 'puntos-fuerza') {
-                for (let i = 1; i < 3; i++) for (let j = 1; j < 3; j++) { ctx.beginPath(); 
-                    ctx.arc(x + w * i / 3, y + h * j / 3, 8, 0, 7); ctx.stroke(); }
             } else if (mode === 'fibonacci') {
                 let cX = x, cY = y, cW = w, cH = h;
                 for (let i = 0; i < 7; i++) {
@@ -492,6 +501,8 @@
                     else if (i % 4 === 2) { ctx.strokeRect(cX, cY, cW, s); cY += s; cH -= s; }
                     else if (i % 4 === 3) { ctx.strokeRect(cX, cY, s, cH); cX += s; cW -= s; }
                 }
+            } else if (mode === 'diagonales') { 
+                line(x, y, x + w, y + h); 
             } else if (mode === 'fuga') {
                 const fx = x + w * fugaX, fy = y + h * fugaY;
                 ctx.setLineDash([5, 5]); line(x, fy, x + w, fy); line(fx, y, fx, y + h);
@@ -505,30 +516,20 @@
                 ctx.beginPath(); ctx.arc(fx, fy, 5, 0, 7); ctx.fillStyle = colors[cIdx]; ctx.fill();
             } else if (mode === 'horizonte') {
                 const numLineas = 10;
-                ctx.setLineDash([]);
-                ctx.globalAlpha = 0.8;
-
+                ctx.setLineDash([]); ctx.globalAlpha = 0.8;
                 if (horMode === "H") {
-                    // --- Horizontal ---
-                    const hy = y + h * horY;
-                    ctx.lineWidth = 2.5;
-                    line(x, hy, x + w, hy);
+                    const hy = y + h * horY; ctx.lineWidth = 2.5; line(x, hy, x + w, hy);
                     for (let i = 1; i <= numLineas; i++) {
                         const offset = Math.pow(i / numLineas, 2.0);
                         const ySuelo = hy + (y + h - hy) * offset;
-                        ctx.lineWidth = 1.5 * (1 - offset + 0.2);
-                        line(x, ySuelo, x + w, ySuelo);
+                        ctx.lineWidth = 1.5 * (1 - offset + 0.2); line(x, ySuelo, x + w, ySuelo);
                     }
                 } else {
-                    // --- Vertical ---
-                    const vx = x + w * fugaX;
-                    ctx.lineWidth = 2.5;
-                    line(vx, y, vx, y + h);
+                    const vx = x + w * fugaX; ctx.lineWidth = 2.5; line(vx, y, vx, y + h);
                     for (let i = 1; i <= numLineas; i++) {
                         const offset = Math.pow(i / numLineas, 2.0);
                         const xPared = vx - (vx - x) * offset;
-                        ctx.lineWidth = 1.5 * (1 - offset + 0.2);
-                        line(xPared, y, xPared, y + h);
+                        ctx.lineWidth = 1.5 * (1 - offset + 0.2); line(xPared, y, xPared, y + h);
                     }
                 }
                 ctx.globalAlpha = 1.0;
@@ -548,13 +549,16 @@
                     ctx.strokeStyle = colors[cIdx]; ctx.globalAlpha = 1 - pulse; ctx.stroke(); ctx.globalAlpha = 1;
                 }
                 ctx.fillStyle = colors[cIdx]; ctx.beginPath(); ctx.arc(ix, iy, 7, 0, 7); ctx.fill();
+            } else if (mode === 'masas') {
+                // Nota: La lógica de renderizado de masas ocurre fuera de esta función,
+                // pero mantenemos el espacio por consistencia de orden.
             } else if (mode === 'cuadrado') {
                 const s = Math.min(w, h); const ox = (w - s) / 2, oy = (h - s) / 2;
                 ctx.save(); ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
                 if (w > h) { ctx.fillRect(x, y, ox, h); ctx.fillRect(x + ox + s, y, ox, h); }
                 else { ctx.fillRect(x, y, w, oy); ctx.fillRect(x, y + oy + s, w, oy); }
                 ctx.restore(); ctx.strokeRect(x + ox, y + oy, s, s);
-            } else if (mode === 'diagonales') { line(x, y, x + w, y + h); }
+            }
         }
 
         function line(x1, y1, x2, y2) { ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke(); }
@@ -583,14 +587,13 @@
 
         const btnReset = document.getElementById('btn-reset');
         ['mousedown', 'touchstart'].forEach(evt => btnReset.addEventListener(evt, (e) => {
-            toggleFullScreen(); // Asegura fullscreen y llama a lockPortrait()
+            toggleFullScreen();
             if (grids[gIdx] === 'masas') { isBypass = true; }
             else if (loadedImage) { centerImage(); fugaX = 0.5; fugaY = 0.5; transformIdx = 0; interX = 0.3; interY = 0.3; }
             if (e.cancelable) e.preventDefault();
         }));
         ['mouseup', 'touchend', 'mouseleave'].forEach(evt => btnReset.addEventListener(evt, () => { isBypass = false; }));
 
-        // Llamada inicial al cargar la página
         window.addEventListener('load', lockPortrait);
     </script>
 </body>
