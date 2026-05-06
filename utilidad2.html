@@ -1,18 +1,40 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Estudio de Composición: Dispositivo</title>
     <style>
         body {
-            margin: 0; padding: 0; background-color: #000; color: white;
-            font-family: sans-serif; overflow: hidden; height: 100dvh;
-            user-select: none; -webkit-user-select: none;
+            margin: 0;
+            padding: 0;
+            background-color: #000;
+            color: white;
+            font-family: sans-serif;
+            overflow: hidden;
+            height: 100dvh;
+            user-select: none;
+            -webkit-user-select: none;
             -webkit-touch-callout: none;
         }
-        #container { position: relative; width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; touch-action: none; }
-        canvas { position: absolute; z-index: 2; pointer-events: auto; }
+
+        #container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            touch-action: none;
+        }
+
+        canvas {
+            position: absolute;
+            z-index: 2;
+            pointer-events: auto;
+        }
 
         .controls-area {
             position: fixed;
@@ -32,7 +54,7 @@
             pointer-events: auto;
             background: rgba(0, 0, 0, 0.6);
             color: white;
-            border: 1.5px solid rgba(255,255,255,0.3);
+            border: 1.5px solid rgba(255, 255, 255, 0.3);
             border-radius: 12px;
             height: 44px;
             font-size: 11px;
@@ -47,29 +69,63 @@
             transition: opacity 0.2s ease;
         }
 
-        #btn-grid { flex: 1; max-width: 180px; padding: 0 10px; }
-        #btn-transform { width: 60px; }
-        #btn-color { width: 44px; }
-        #color-dot { width: 14px; height: 14px; border-radius: 50%; background: white; border: 1.5px solid rgba(255,255,255,0.4); }
-        #btn-reset { width: 44px; font-size: 22px; }
+        #btn-grid {
+            flex: 1;
+            max-width: 180px;
+            padding: 0 10px;
+        }
 
-        #mainActionBtn { position: absolute; z-index: 60; padding: 18px 40px; font-size: 16px; border-radius: 30px; border: none; background: #FFCC00; color: black; font-weight: bold; cursor: pointer; }
+        #btn-transform {
+            width: 60px;
+        }
+
+        #btn-color {
+            width: 44px;
+        }
+
+        #color-dot {
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background: white;
+            border: 1.5px solid rgba(255, 255, 255, 0.4);
+        }
+
+        #btn-reset {
+            width: 44px;
+            font-size: 22px;
+        }
+
+        #mainActionBtn {
+            position: absolute;
+            z-index: 60;
+            padding: 18px 40px;
+            font-size: 16px;
+            border-radius: 30px;
+            border: none;
+            background: #FFCC00;
+            color: black;
+            font-weight: bold;
+            cursor: pointer;
+        }
 
         /* Estilo para botones de navegación arriba */
         #top-ui {
-                position: absolute;
-                top: calc(10px + env(safe-area-inset-top, 0px));
-                left: 0; right: 0;
-                z-index: 50;
-                display: none;
-                justify-content: center;
-                /* Eliminamos el gap para que se peguen */
-                gap: 0;
-                pointer-events: none;
-            }
+            position: absolute;
+            top: calc(10px + env(safe-area-inset-top, 0px));
+            left: 0;
+            right: 0;
+            z-index: 50;
+            display: none;
+            justify-content: center;
+            /* Eliminamos el gap para que se peguen */
+            gap: 0;
+            pointer-events: none;
+        }
 
         /* Estilo base unificado para los tres botones de arriba */
-        .nav-btn, #btn-reselect {
+        .nav-btn,
+        #btn-reselect {
             height: 44px;
             background: rgba(0, 0, 0, 0.6);
             border: 1.5px solid rgba(255, 255, 255, 0.3);
@@ -104,390 +160,439 @@
             margin-right: 0;
         }
 
-        #fileInput { display: none; }
+        #fileInput {
+            display: none;
+        }
     </style>
 </head>
+
 <body>
 
-<div id="container">
-    <canvas id="canvas"></canvas>
-    <button id="mainActionBtn">SELECCIONAR FOTOS</button>
-    <input type="file" id="fileInput" accept="image/*" multiple>
+    <div id="container">
+        <canvas id="canvas"></canvas>
+        <button id="mainActionBtn">SELECCIONAR FOTOS</button>
+        <input type="file" id="fileInput" accept="image/*" multiple>
 
-    <div id="top-ui">
-        <button id="btn-prev" class="nav-btn">&#8249;</button>
-        <button id="btn-reselect" class="ui-btn">CARGAR MÁS</button>
-        <button id="btn-next" class="nav-btn">&#8250;</button>
+        <div id="top-ui">
+            <button id="btn-prev" class="nav-btn">&#8249;</button>
+            <button id="btn-reselect" class="ui-btn">CARGAR MÁS</button>
+            <button id="btn-next" class="nav-btn">&#8250;</button>
+        </div>
+
+        <div class="controls-area" id="controls-area">
+            <button id="btn-reset" class="ui-btn">&#8864;</button>
+            <button id="btn-grid" class="ui-btn">Regla de Tercios</button>
+            <button id="btn-color" class="ui-btn">
+                <div id="color-dot"></div>
+            </button>
+            <button id="btn-transform" class="ui-btn">MODO</button>
+        </div>
     </div>
 
-    <div class="controls-area" id="controls-area">
-        <button id="btn-reset" class="ui-btn">&#8864;</button>
-        <button id="btn-grid" class="ui-btn">Regla de Tercios</button>
-        <button id="btn-color" class="ui-btn"><div id="color-dot"></div></button>
-        <button id="btn-transform" class="ui-btn">MODO</button>
-    </div>
-</div>
+    <script>
+        let fps = 30;
+        let fpsInterval = 1000 / fps;
+        let then = performance.now();
 
-<script>
-    let fps = 30;
-    let fpsInterval = 1000 / fps;
-    let then = performance.now();
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d', { willReadFrequently: true });
+        const fileInput = document.getElementById('fileInput');
+        const btnTransform = document.getElementById('btn-transform');
 
-    const canvas = document.getElementById('canvas');
-    const ctx = canvas.getContext('2d', { willReadFrequently: true });
-    const fileInput = document.getElementById('fileInput');
-    const btnTransform = document.getElementById('btn-transform');
+        const grids = ['tercios', 'golden', 'tri-aureos', 'masas', 'cuadrado', 'fuga', 'horizonte', 'puntos-fuerza', 'fibonacci', 'comp-L', 'diagonales'];
+        const gridLabels = ['Regla de Tercios', 'Proporción Áurea', 'Triángulos Áureos', 'Balance', 'Cuadrado', 'Punto de Fuga', 'Horizonte', 'Puntos de Fuerza', 'Espiral Áurea', 'Composición L', 'Diagonales'];
 
-    const grids = ['tercios', 'golden', 'tri-aureos', 'masas', 'cuadrado', 'fuga', 'puntos-fuerza', 'fibonacci', 'comp-L', 'diagonales'];
-    const gridLabels = ['Regla de Tercios', 'Proporción Áurea', 'Triángulos Áureos', 'Balance', 'Cuadrado', 'Punto de Fuga', 'Puntos de Fuerza', 'Espiral Áurea', 'Composición L', 'Diagonales'];
+        let gIdx = 0, transformIdx = 0, cIdx = 0;
+        const colors = ['#FFFFFF', '#FF3B30', '#4CD964', '#FFCC00', '#007AFF'];
 
-    let gIdx = 0, transformIdx = 0, cIdx = 0;
-    const colors = ['#FFFFFF', '#FF3B30', '#4CD964', '#FFCC00', '#007AFF'];
+        let isRunning = false, isDragging = false, dragMode = "none";
+        let horY = 0.5; // Posición inicial áurea: 0.618
+        let horMode = "H"; // "H" para suelo, "V" para pared
+        let fugaX = 0.5, fugaY = 0.5;
+        let interX = 0.3, interY = 0.3;
+        let pulseStartTime = 0;
 
-    let isRunning = false, isDragging = false, dragMode = "none";
-    let fugaX = 0.5, fugaY = 0.5;
-    let interX = 0.3, interY = 0.3;
-    let pulseStartTime = 0;
+        let mBlur = 5, mThr = 127, mInvert = false, isBypass = false;
 
-    let mBlur = 5, mThr = 127, mInvert = false, isBypass = false;
+        let imagesGallery = [];
+        let currentIdx = 0;
 
-    let imagesGallery = [];
-    let currentIdx = 0;
+        let loadedImage = null, masasImage = null, imgX = 0, imgY = 0, imgScale = 1;
+        let initialImgX = 0, initialImgY = 0, initialScale = 1, initialDist = 0, initialCenter = { x: 0, y: 0 };
+        let startTouches = [];
 
-    let loadedImage = null, masasImage = null, imgX = 0, imgY = 0, imgScale = 1;
-    let initialImgX = 0, initialImgY = 0, initialScale = 1, initialDist = 0, initialCenter = { x: 0, y: 0 };
-    let startTouches = [];
-
-    // --- FUNCIÓN PARA BLOQUEAR PORTRAIT ---
-    function lockPortrait() {
-        if (screen.orientation && screen.orientation.lock) {
-            screen.orientation.lock('portrait').catch(err => {
-                console.log("El bloqueo requiere pantalla completa o no es soportado.");
-            });
-        }
-    }
-
-    function toggleFullScreen() {
-        if (!document.fullscreenElement) {
-            document.documentElement.requestFullscreen()
-                .then(() => {
-                    lockPortrait(); // Bloquear después de entrar en fullscreen
-                })
-                .catch(() => {});
-        } else {
-            lockPortrait();
-        }
-    }
-
-    function updateTransformBtnState() {
-        const currentGrid = grids[gIdx];
-        const isUseful = ['tri-aureos', 'masas', 'fibonacci', 'diagonales'].includes(currentGrid);
-        if (isUseful) {
-            btnTransform.style.opacity = "1";
-            btnTransform.style.pointerEvents = "auto";
-        } else {
-            btnTransform.style.opacity = "0.2";
-            btnTransform.style.pointerEvents = "none";
-        }
-    }
-
-    function resizImage(img, maxDim) {
-        let w = img.width;
-        let h = img.height;
-        let rotate = false;
-        if (w > h) {
-            rotate = true;
-            let temp = w;
-            w = h;
-            h = temp;
-        }
-        if (w > h) {
-            if (w > maxDim) { h *= maxDim / w; w = maxDim; }
-        } else {
-            if (h > maxDim) { w *= maxDim / h; h = maxDim; }
-        }
-        const tCanvas = document.createElement('canvas');
-        tCanvas.width = w;
-        tCanvas.height = h;
-        const tCtx = tCanvas.getContext('2d');
-
-        if (rotate) {
-            tCtx.translate(w / 2, h / 2);
-            tCtx.rotate(Math.PI / 2);
-            tCtx.drawImage(img, -h / 2, -w / 2, h, w);
-        } else {
-            tCtx.drawImage(img, 0, 0, w, h);
-        }
-        const newImg = new Image();
-        newImg.src = tCanvas.toDataURL('image/jpeg', 0.8);
-        return newImg;
-    }
-
-    fileInput.addEventListener('change', (e) => {
-        lockPortrait(); // Llamada al cargar fotos
-        const files = Array.from(e.target.files);
-        if (files.length === 0) return;
-
-        imagesGallery = [];
-        currentIdx = 0;
-        let loadedCount = 0;
-
-        files.forEach((file, i) => {
-            const reader = new FileReader();
-            reader.onload = (event) => {
-                const tempImg = new Image();
-                tempImg.onload = () => {
-                    imagesGallery[i] = {
-                        full: resizImage(tempImg, 1200),
-                        masas: resizImage(tempImg, 600)
-                    };
-                    loadedCount++;
-                    if (i === 0) {
-                        applyImage(0);
-                        if (!isRunning) setupView();
-                    }
-                };
-                tempImg.src = event.target.result;
-            };
-            reader.readAsDataURL(file);
-        });
-    });
-
-    function applyImage(idx) {
-        if (!imagesGallery[idx]) return;
-        loadedImage = imagesGallery[idx].full;
-        masasImage = imagesGallery[idx].masas;
-        setTimeout(() => {
-            centerImage();
-            fugaX = 0.5; fugaY = 0.5; interX = 0.3; interY = 0.3; transformIdx = 0;
-        }, 100);
-    }
-
-    function setupView() {
-        isRunning = true;
-        document.getElementById('mainActionBtn').style.display = "none";
-        document.getElementById('top-ui').style.display = "flex";
-        document.getElementById('controls-area').style.display = "flex";
-        updateTransformBtnState();
-        render();
-    }
-
-    function centerImage() {
-        if(!loadedImage) return;
-        const W = window.innerWidth, H = window.innerHeight;
-        const ir = loadedImage.width / loadedImage.height;
-        if (ir > W/H) { imgScale = W/loadedImage.width; imgX = 0; imgY = (H - (loadedImage.height*imgScale))/2; }
-        else { imgScale = H/loadedImage.height; imgY = 0; imgX = (W - (loadedImage.width*imgScale))/2; }
-    }
-
-    document.getElementById('btn-next').addEventListener('click', () => {
-        if (imagesGallery.length < 2) return;
-        currentIdx = (currentIdx + 1) % imagesGallery.length;
-        applyImage(currentIdx);
-    });
-
-    document.getElementById('btn-prev').addEventListener('click', () => {
-        if (imagesGallery.length < 2) return;
-        currentIdx = (currentIdx - 1 + imagesGallery.length) % imagesGallery.length;
-        applyImage(currentIdx);
-    });
-
-    document.getElementById('btn-reselect').addEventListener('click', () => fileInput.click());
-
-    function handleStart(e) {
-        if (!isRunning || !loadedImage) return;
-        isDragging = true;
-        startTouches = Array.from(e.touches || [e]);
-        if (startTouches.length === 1) {
-            if (grids[gIdx] === 'fuga') { dragMode = "fuga"; }
-            else if (grids[gIdx] === 'comp-L') { dragMode = "comp-L"; }
-            else if (grids[gIdx] === 'masas') { dragMode = "masas"; }
-            else { dragMode = "pan"; initialImgX = imgX; initialImgY = imgY; }
-        } else if (startTouches.length === 2) {
-            dragMode = "zoom";
-            initialDist = Math.hypot(startTouches[0].clientX - startTouches[1].clientX, startTouches[0].clientY - startTouches[1].clientY);
-            initialScale = imgScale; initialImgX = imgX; initialImgY = imgY;
-            initialCenter = { x: (startTouches[0].clientX + startTouches[1].clientX)/2, y: (startTouches[0].clientY + startTouches[1].clientY)/2 };
-        }
-    }
-
-    function handleMove(e) {
-        if (!isDragging || !isRunning || !loadedImage) return;
-        const cur = Array.from(e.touches || [e]);
-        const rw = loadedImage.width * imgScale, rh = loadedImage.height * imgScale;
-
-        if (cur.length === 1 && startTouches.length === 1) {
-            if (dragMode === "fuga") {
-                fugaX = (cur[0].clientX - imgX) / rw;
-                fugaY = (cur[0].clientY - imgY) / rh;
-            } else if (dragMode === "comp-L") {
-                interX = Math.max(0, Math.min(1, (cur[0].clientX - imgX) / rw));
-                interY = Math.max(0, Math.min(1, (cur[0].clientY - imgY) / rh));
-            } else if (dragMode === "masas") {
-                const pad = 0.1;
-                let nx = (cur[0].clientX - imgX) / rw;
-                let ny = (cur[0].clientY - imgY) / rh;
-                let xNorm = Math.max(0, Math.min(1, (nx - pad) / (1 - 2 * pad)));
-                let yNorm = Math.max(0, Math.min(1, (ny - pad) / (1 - 2 * pad)));
-                mBlur = Math.round(xNorm * 40);
-                mThr = Math.round(40 + (yNorm * 175));
-            } else if (dragMode === "pan") {
-                imgX = initialImgX + (cur[0].clientX - startTouches[0].clientX);
-                imgY = initialImgY + (cur[0].clientY - startTouches[0].clientY);
+        // --- FUNCIÓN PARA BLOQUEAR PORTRAIT ---
+        function lockPortrait() {
+            if (screen.orientation && screen.orientation.lock) {
+                screen.orientation.lock('portrait').catch(err => {
+                    console.log("El bloqueo requiere pantalla completa o no es soportado.");
+                });
             }
-        } else if (cur.length === 2) {
-            const newDist = Math.hypot(cur[0].clientX - cur[1].clientX, cur[0].clientY - cur[1].clientY);
-            imgScale = Math.max(0.1, Math.min(10, initialScale * (newDist / initialDist)));
-            const newCenter = { x: (cur[0].clientX + cur[1].clientX)/2, y: (cur[0].clientY + cur[1].clientY)/2 };
-            imgX = initialImgX + (newCenter.x - initialCenter.x);
-            imgY = initialImgY + (newCenter.y - initialCenter.y);
         }
-    }
 
-    canvas.addEventListener('touchstart', (e)=>{e.preventDefault(); handleStart(e);}, {passive:false});
-    canvas.addEventListener('touchmove', (e)=>{e.preventDefault(); handleMove(e);}, {passive:false});
-    canvas.addEventListener('touchend', ()=>isDragging=false);
-    canvas.addEventListener('mousedown', handleStart);
-    window.addEventListener('mousemove', (e)=>isDragging && handleMove(e));
-    window.addEventListener('mouseup', ()=>isDragging=false);
-
-    function render(time) {
-        if (!isRunning) return;
-        requestAnimationFrame(render);
-        let now = performance.now();
-        let elapsed = now - then;
-        if (elapsed < fpsInterval) return;
-        then = now - (elapsed % fpsInterval);
-
-        canvas.width = window.innerWidth; canvas.height = window.innerHeight;
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        ctx.fillStyle = '#111'; ctx.fillRect(0,0,canvas.width,canvas.height);
-
-        if (loadedImage) {
-            const rw = Math.round(loadedImage.width * imgScale), rh = Math.round(loadedImage.height * imgScale);
-            if (grids[gIdx] === 'masas' && !isBypass && masasImage) {
-                ctx.save();
-                ctx.filter = `grayscale(100%) blur(${mBlur}px)`;
-                ctx.drawImage(masasImage, imgX, imgY, rw, rh);
-                const imgData = ctx.getImageData(imgX, imgY, rw, rh);
-                const data = imgData.data;
-                const targetThr = mInvert ? (255 - mThr) : mThr;
-                for (let i = 0; i < data.length; i += 4) {
-                    let v = data[i] > targetThr ? 255 : 0;
-                    if (mInvert) v = 255 - v;
-                    data[i] = data[i+1] = data[i+2] = v;
-                }
-                ctx.filter = 'none';
-                ctx.putImageData(imgData, imgX, imgY);
-                ctx.restore();
+        function toggleFullScreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen()
+                    .then(() => {
+                        lockPortrait(); // Bloquear después de entrar en fullscreen
+                    })
+                    .catch(() => { });
             } else {
-                ctx.drawImage(loadedImage, imgX, imgY, rw, rh);
+                lockPortrait();
             }
-            ctx.save();
-            ctx.beginPath(); ctx.rect(imgX, imgY, rw, rh); ctx.clip();
-            ctx.save();
-            const cx = imgX + rw/2, cy = imgY + rh/2;
-            if (transformIdx===1) { ctx.translate(2*cx,0); ctx.scale(-1,1); }
-            else if (transformIdx===2) { ctx.translate(2*cx, 2*cy); ctx.rotate(Math.PI); }
-            else if (transformIdx===3) { ctx.translate(0, 2*cy); ctx.scale(1,-1); }
-            ctx.strokeStyle = colors[cIdx]; ctx.lineWidth = 1.5;
-            dibujarGrilla(grids[gIdx], imgX, imgY, rw, rh, time);
-            ctx.restore();
-            ctx.restore();
-            ctx.strokeStyle = colors[cIdx]; ctx.lineWidth = 2; ctx.strokeRect(imgX, imgY, rw, rh);
         }
-    }
 
-    function dibujarGrilla(mode, x, y, w, h, time) {
-        ctx.setLineDash([]); ctx.lineWidth = 1.5;
-        if (mode === 'tercios') {
-            for(let i=1; i<3; i++) { line(x+w*i/3, y, x+w*i/3, y+h); line(x, y+h*i/3, x+w, y+h*i/3); }
-        } else if (mode === 'golden') {
-            const p = 0.618; line(x+w*p, y, x+w*p, y+h); line(x+w*(1-p), y, x+w*(1-p), y+h);
-            line(x, y+h*p, x+w, y+h*p); line(x, y+h*(1-p), x+w, y+h*(1-p));
-        } else if (mode === 'tri-aureos') {
-            line(x, y+h, x+w, y); const dx=w, dy=-h;
-            const t1 = ((-h)*dy)/(dx*dx+dy*dy); line(x,y, x+t1*dx, y+h+t1*dy);
-            const t2 = ((w)*dx)/(dx*dx+dy*dy); line(x+w,y+h, x+t2*dx, y+h+t2*dy);
-        } else if (mode === 'puntos-fuerza') {
-            for(let i=1; i<3; i++) for(let j=1; j<3; j++)
-            { ctx.beginPath(); ctx.arc(x + w*i/3, y + h*j/3, 8, 0, 7); ctx.stroke(); }
-        } else if (mode === 'fibonacci') {
-            let cX=x, cY=y, cW=w, cH=h;
-            for(let i=0; i<7; i++) {
-                let s = Math.min(cW, cH);
-                if (i%4===0) { ctx.strokeRect(cX, cY+cH-s, cW, s); cH-=s; }
-                else if (i%4===1) { ctx.strokeRect(cX+cW-s, cY, s, cH); cW-=s; }
-                else if (i%4===2) { ctx.strokeRect(cX, cY, cW, s); cY+=s; cH-=s; }
-                else if (i%4===3) { ctx.strokeRect(cX, cY, s, cH); cX+=s; cW-=s; }
+        function updateTransformBtnState() {
+            const currentGrid = grids[gIdx];
+            const isUseful = ['tri-aureos', 'masas', 'fibonacci', 'diagonales', 'horizonte'].includes(currentGrid);
+            if (isUseful) {
+                btnTransform.style.opacity = "1";
+                btnTransform.style.pointerEvents = "auto";
+            } else {
+                btnTransform.style.opacity = "0.2";
+                btnTransform.style.pointerEvents = "none";
             }
-        } else if (mode === 'fuga') {
-            const fx = x + w * fugaX, fy = y + h * fugaY;
-            ctx.setLineDash([5, 5]); line(x, fy, x + w, fy); line(fx, y, fx, y + h);
-            ctx.setLineDash([]); line(x, y, fx, fy); line(x + w, y, fx, fy); line(x, y + h, fx, fy); line(x + w, y + h, fx, fy);
-            const elapsed = time - pulseStartTime;
-            if (elapsed < 1000) {
-                const pulse = Math.abs(Math.sin(elapsed / 200));
-                ctx.beginPath(); ctx.arc(fx, fy, 5 + pulse * 10, 0, 7);
-                ctx.strokeStyle = colors[cIdx]; ctx.globalAlpha = 1 - pulse; ctx.stroke(); ctx.globalAlpha = 1;
-            }
-            ctx.beginPath(); ctx.arc(fx, fy, 5, 0, 7); ctx.fillStyle = colors[cIdx]; ctx.fill();
-        } else if (mode === 'comp-L') {
-            const ix = x + w * interX, iy = y + h * interY; line(x, iy, x + w, iy); line(ix, y, ix, y + h);
-            ctx.fillStyle = 'rgba(0,0,0,0.25)';
-            const aTL = interX * interY, aTR = (1 - interX) * interY, aBL = interX * (1 - interY), aBR = (1 - interX) * (1 - interY);
-            const maxA = Math.max(aTL, aTR, aBL, aBR);
-            if (aTL !== maxA) ctx.fillRect(x, y, ix - x, iy - y);
-            if (aTR !== maxA) ctx.fillRect(ix, y, (x + w) - ix, iy - y);
-            if (aBL !== maxA) ctx.fillRect(x, iy, ix - x, (y + h) - iy);
-            if (aBR !== maxA) ctx.fillRect(ix, iy, (x + w) - ix, (y + h) - iy);
-            const elapsed = time - pulseStartTime;
-            if (elapsed < 1000) {
-                const pulse = Math.abs(Math.sin(elapsed/200));
-                ctx.beginPath(); ctx.arc(ix, iy, 7 + pulse*10, 0, 7);
-                ctx.strokeStyle = colors[cIdx]; ctx.globalAlpha = 1-pulse; ctx.stroke(); ctx.globalAlpha = 1;
-            }
-            ctx.fillStyle = colors[cIdx]; ctx.beginPath(); ctx.arc(ix, iy, 7, 0, 7); ctx.fill();
-        } else if (mode === 'cuadrado') {
-            const s = Math.min(w, h); const ox = (w - s) / 2, oy = (h - s) / 2;
-            ctx.save(); ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
-            if (w > h) { ctx.fillRect(x, y, ox, h); ctx.fillRect(x + ox + s, y, ox, h); }
-            else { ctx.fillRect(x, y, w, oy); ctx.fillRect(x, y + oy + s, w, oy); }
-            ctx.restore(); ctx.strokeRect(x + ox, y + oy, s, s);
-        } else if (mode === 'diagonales') { line(x,y,x+w,y+h); }
-    }
-
-    function line(x1,y1,x2,y2) { ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.stroke(); }
-
-    document.getElementById('mainActionBtn').addEventListener('click', () => { toggleFullScreen(); fileInput.click(); });
-
-    document.getElementById('btn-grid').addEventListener('click', (e) => {
-        gIdx = (gIdx + 1) % grids.length;
-        if (grids[gIdx] === 'comp-L' || grids[gIdx] === 'fuga' || grids[gIdx] === 'masas') {
-            transformIdx = 0; pulseStartTime = performance.now();
         }
-        e.target.textContent = gridLabels[gIdx];
-        updateTransformBtnState();
-    });
 
-    btnTransform.addEventListener('click', () => {
-        if (grids[gIdx] === 'masas') { mInvert = !mInvert; mThr = 255 - mThr; }
-        else { transformIdx = (transformIdx+1)%4; }
-    });
+        function resizImage(img, maxDim) {
+            let w = img.width;
+            let h = img.height;
+            let rotate = false;
+            if (w > h) {
+                rotate = true;
+                let temp = w;
+                w = h;
+                h = temp;
+            }
+            if (w > h) {
+                if (w > maxDim) { h *= maxDim / w; w = maxDim; }
+            } else {
+                if (h > maxDim) { w *= maxDim / h; h = maxDim; }
+            }
+            const tCanvas = document.createElement('canvas');
+            tCanvas.width = w;
+            tCanvas.height = h;
+            const tCtx = tCanvas.getContext('2d');
 
-    document.getElementById('btn-color').addEventListener('click', () => { cIdx=(cIdx+1)%colors.length; document.getElementById('color-dot').style.background=colors[cIdx]; });
+            if (rotate) {
+                tCtx.translate(w / 2, h / 2);
+                tCtx.rotate(Math.PI / 2);
+                tCtx.drawImage(img, -h / 2, -w / 2, h, w);
+            } else {
+                tCtx.drawImage(img, 0, 0, w, h);
+            }
+            const newImg = new Image();
+            newImg.src = tCanvas.toDataURL('image/jpeg', 0.8);
+            return newImg;
+        }
 
-    const btnReset = document.getElementById('btn-reset');
-    ['mousedown', 'touchstart'].forEach(evt => btnReset.addEventListener(evt, (e) => {
-        toggleFullScreen(); // Asegura fullscreen y llama a lockPortrait()
-        if (grids[gIdx] === 'masas') { isBypass = true; }
-        else if (loadedImage) { centerImage(); fugaX = 0.5; fugaY = 0.5; transformIdx = 0; interX = 0.3; interY = 0.3; }
-        if (e.cancelable) e.preventDefault();
-    }));
-    ['mouseup', 'touchend', 'mouseleave'].forEach(evt => btnReset.addEventListener(evt, () => { isBypass = false; }));
+        fileInput.addEventListener('change', (e) => {
+            lockPortrait(); // Llamada al cargar fotos
+            const files = Array.from(e.target.files);
+            if (files.length === 0) return;
 
-    // Llamada inicial al cargar la página
-    window.addEventListener('load', lockPortrait);
-</script>
+            imagesGallery = [];
+            currentIdx = 0;
+            let loadedCount = 0;
+
+            files.forEach((file, i) => {
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    const tempImg = new Image();
+                    tempImg.onload = () => {
+                        imagesGallery[i] = {
+                            full: resizImage(tempImg, 1200),
+                            masas: resizImage(tempImg, 600)
+                        };
+                        loadedCount++;
+                        if (i === 0) {
+                            applyImage(0);
+                            if (!isRunning) setupView();
+                        }
+                    };
+                    tempImg.src = event.target.result;
+                };
+                reader.readAsDataURL(file);
+            });
+        });
+
+        function applyImage(idx) {
+            if (!imagesGallery[idx]) return;
+            loadedImage = imagesGallery[idx].full;
+            masasImage = imagesGallery[idx].masas;
+            setTimeout(() => {
+                centerImage();
+                fugaX = 0.5; fugaY = 0.5; interX = 0.3; interY = 0.3; transformIdx = 0;
+            }, 100);
+        }
+
+        function setupView() {
+            isRunning = true;
+            document.getElementById('mainActionBtn').style.display = "none";
+            document.getElementById('top-ui').style.display = "flex";
+            document.getElementById('controls-area').style.display = "flex";
+            updateTransformBtnState();
+            render();
+        }
+
+        function centerImage() {
+            if (!loadedImage) return;
+            const W = window.innerWidth, H = window.innerHeight;
+            const ir = loadedImage.width / loadedImage.height;
+            if (ir > W / H) { imgScale = W / loadedImage.width; imgX = 0; imgY = (H - (loadedImage.height * imgScale)) / 2; }
+            else { imgScale = H / loadedImage.height; imgY = 0; imgX = (W - (loadedImage.width * imgScale)) / 2; }
+        }
+
+        document.getElementById('btn-next').addEventListener('click', () => {
+            if (imagesGallery.length < 2) return;
+            currentIdx = (currentIdx + 1) % imagesGallery.length;
+            applyImage(currentIdx);
+        });
+
+        document.getElementById('btn-prev').addEventListener('click', () => {
+            if (imagesGallery.length < 2) return;
+            currentIdx = (currentIdx - 1 + imagesGallery.length) % imagesGallery.length;
+            applyImage(currentIdx);
+        });
+
+        document.getElementById('btn-reselect').addEventListener('click', () => fileInput.click());
+
+        function handleStart(e) {
+            if (!isRunning || !loadedImage) return;
+            isDragging = true;
+            startTouches = Array.from(e.touches || [e]);
+            if (startTouches.length === 1) {
+                if (grids[gIdx] === 'fuga') { dragMode = "fuga"; }
+                else if (grids[gIdx] === 'horizonte') { dragMode = "horizonte"; }
+                else if (grids[gIdx] === 'comp-L') { dragMode = "comp-L"; }
+                else if (grids[gIdx] === 'masas') { dragMode = "masas"; }
+                else { dragMode = "pan"; initialImgX = imgX; initialImgY = imgY; }
+            } else if (startTouches.length === 2) {
+                dragMode = "zoom";
+                initialDist = Math.hypot(startTouches[0].clientX - startTouches[1].clientX, startTouches[0].clientY - startTouches[1].clientY);
+                initialScale = imgScale; initialImgX = imgX; initialImgY = imgY;
+                initialCenter = { x: (startTouches[0].clientX + startTouches[1].clientX) / 2, y: (startTouches[0].clientY + startTouches[1].clientY) / 2 };
+            }
+        }
+
+        function handleMove(e) {
+            if (!isDragging || !isRunning || !loadedImage) return;
+            const cur = Array.from(e.touches || [e]);
+            const rw = loadedImage.width * imgScale, rh = loadedImage.height * imgScale;
+
+            if (cur.length === 1 && startTouches.length === 1) {
+                if (dragMode === "fuga") {
+                    fugaX = (cur[0].clientX - imgX) / rw;
+                    fugaY = (cur[0].clientY - imgY) / rh;
+                } else if (dragMode === "horizonte") {
+                    if (horMode === "H") {
+                        horY = Math.max(0, Math.min(1, (cur[0].clientY - imgY) / rh));
+                    } else {
+                        // Reutilizamos fugaX para no crear mil variables, o crea una horX
+                        fugaX = Math.max(0, Math.min(1, (cur[0].clientX - imgX) / rw));
+                    }
+                } else if (dragMode === "comp-L") {
+                    interX = Math.max(0, Math.min(1, (cur[0].clientX - imgX) / rw));
+                    interY = Math.max(0, Math.min(1, (cur[0].clientY - imgY) / rh));
+                } else if (dragMode === "masas") {
+                    const pad = 0.1;
+                    let nx = (cur[0].clientX - imgX) / rw;
+                    let ny = (cur[0].clientY - imgY) / rh;
+                    let xNorm = Math.max(0, Math.min(1, (nx - pad) / (1 - 2 * pad)));
+                    let yNorm = Math.max(0, Math.min(1, (ny - pad) / (1 - 2 * pad)));
+                    mBlur = Math.round(xNorm * 40);
+                    mThr = Math.round(40 + (yNorm * 175));
+                } else if (dragMode === "pan") {
+                    imgX = initialImgX + (cur[0].clientX - startTouches[0].clientX);
+                    imgY = initialImgY + (cur[0].clientY - startTouches[0].clientY);
+                }
+            } else if (cur.length === 2) {
+                const newDist = Math.hypot(cur[0].clientX - cur[1].clientX, cur[0].clientY - cur[1].clientY);
+                imgScale = Math.max(0.1, Math.min(10, initialScale * (newDist / initialDist)));
+                const newCenter = { x: (cur[0].clientX + cur[1].clientX) / 2, y: (cur[0].clientY + cur[1].clientY) / 2 };
+                imgX = initialImgX + (newCenter.x - initialCenter.x);
+                imgY = initialImgY + (newCenter.y - initialCenter.y);
+            }
+        }
+
+        canvas.addEventListener('touchstart', (e) => { e.preventDefault(); handleStart(e); }, { passive: false });
+        canvas.addEventListener('touchmove', (e) => { e.preventDefault(); handleMove(e); }, { passive: false });
+        canvas.addEventListener('touchend', () => isDragging = false);
+        canvas.addEventListener('mousedown', handleStart);
+        window.addEventListener('mousemove', (e) => isDragging && handleMove(e));
+        window.addEventListener('mouseup', () => isDragging = false);
+
+        function render(time) {
+            if (!isRunning) return;
+            requestAnimationFrame(render);
+            let now = performance.now();
+            let elapsed = now - then;
+            if (elapsed < fpsInterval) return;
+            then = now - (elapsed % fpsInterval);
+
+            canvas.width = window.innerWidth; canvas.height = window.innerHeight;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = '#111'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            if (loadedImage) {
+                const rw = Math.round(loadedImage.width * imgScale), rh = Math.round(loadedImage.height * imgScale);
+                if (grids[gIdx] === 'masas' && !isBypass && masasImage) {
+                    ctx.save();
+                    ctx.filter = `grayscale(100%) blur(${mBlur}px)`;
+                    ctx.drawImage(masasImage, imgX, imgY, rw, rh);
+                    const imgData = ctx.getImageData(imgX, imgY, rw, rh);
+                    const data = imgData.data;
+                    const targetThr = mInvert ? (255 - mThr) : mThr;
+                    for (let i = 0; i < data.length; i += 4) {
+                        let v = data[i] > targetThr ? 255 : 0;
+                        if (mInvert) v = 255 - v;
+                        data[i] = data[i + 1] = data[i + 2] = v;
+                    }
+                    ctx.filter = 'none';
+                    ctx.putImageData(imgData, imgX, imgY);
+                    ctx.restore();
+                } else {
+                    ctx.drawImage(loadedImage, imgX, imgY, rw, rh);
+                }
+                ctx.save();
+                ctx.beginPath(); ctx.rect(imgX, imgY, rw, rh); ctx.clip();
+                ctx.save();
+                const cx = imgX + rw / 2, cy = imgY + rh / 2;
+                if (transformIdx === 1) { ctx.translate(2 * cx, 0); ctx.scale(-1, 1); }
+                else if (transformIdx === 2) { ctx.translate(2 * cx, 2 * cy); ctx.rotate(Math.PI); }
+                else if (transformIdx === 3) { ctx.translate(0, 2 * cy); ctx.scale(1, -1); }
+                ctx.strokeStyle = colors[cIdx]; ctx.lineWidth = 1.5;
+                dibujarGrilla(grids[gIdx], imgX, imgY, rw, rh, time);
+                ctx.restore();
+                ctx.restore();
+                ctx.strokeStyle = colors[cIdx]; ctx.lineWidth = 2; ctx.strokeRect(imgX, imgY, rw, rh);
+            }
+        }
+
+        function dibujarGrilla(mode, x, y, w, h, time) {
+            ctx.setLineDash([]); ctx.lineWidth = 1.5;
+            if (mode === 'tercios') {
+                for (let i = 1; i < 3; i++) { line(x + w * i / 3, y, x + w * i / 3, y + h); line(x, y + h * i / 3, x + w, y + h * i / 3); }
+            } else if (mode === 'golden') {
+                const p = 0.618; line(x + w * p, y, x + w * p, y + h); line(x + w * (1 - p), y, x + w * (1 - p), y + h);
+                line(x, y + h * p, x + w, y + h * p); line(x, y + h * (1 - p), x + w, y + h * (1 - p));
+            } else if (mode === 'tri-aureos') {
+                line(x, y + h, x + w, y); const dx = w, dy = -h;
+                const t1 = ((-h) * dy) / (dx * dx + dy * dy); line(x, y, x + t1 * dx, y + h + t1 * dy);
+                const t2 = ((w) * dx) / (dx * dx + dy * dy); line(x + w, y + h, x + t2 * dx, y + h + t2 * dy);
+            } else if (mode === 'puntos-fuerza') {
+                for (let i = 1; i < 3; i++) for (let j = 1; j < 3; j++) { ctx.beginPath(); 
+                    ctx.arc(x + w * i / 3, y + h * j / 3, 8, 0, 7); ctx.stroke(); }
+            } else if (mode === 'fibonacci') {
+                let cX = x, cY = y, cW = w, cH = h;
+                for (let i = 0; i < 7; i++) {
+                    let s = Math.min(cW, cH);
+                    if (i % 4 === 0) { ctx.strokeRect(cX, cY + cH - s, cW, s); cH -= s; }
+                    else if (i % 4 === 1) { ctx.strokeRect(cX + cW - s, cY, s, cH); cW -= s; }
+                    else if (i % 4 === 2) { ctx.strokeRect(cX, cY, cW, s); cY += s; cH -= s; }
+                    else if (i % 4 === 3) { ctx.strokeRect(cX, cY, s, cH); cX += s; cW -= s; }
+                }
+            } else if (mode === 'fuga') {
+                const fx = x + w * fugaX, fy = y + h * fugaY;
+                ctx.setLineDash([5, 5]); line(x, fy, x + w, fy); line(fx, y, fx, y + h);
+                ctx.setLineDash([]); line(x, y, fx, fy); line(x + w, y, fx, fy); line(x, y + h, fx, fy); line(x + w, y + h, fx, fy);
+                const elapsed = time - pulseStartTime;
+                if (elapsed < 1000) {
+                    const pulse = Math.abs(Math.sin(elapsed / 200));
+                    ctx.beginPath(); ctx.arc(fx, fy, 5 + pulse * 10, 0, 7);
+                    ctx.strokeStyle = colors[cIdx]; ctx.globalAlpha = 1 - pulse; ctx.stroke(); ctx.globalAlpha = 1;
+                }
+                ctx.beginPath(); ctx.arc(fx, fy, 5, 0, 7); ctx.fillStyle = colors[cIdx]; ctx.fill();
+            } else if (mode === 'horizonte') {
+                const numLineas = 10;
+                ctx.setLineDash([]);
+                ctx.globalAlpha = 0.8;
+
+                if (horMode === "H") {
+                    // --- Horizontal ---
+                    const hy = y + h * horY;
+                    ctx.lineWidth = 2.5;
+                    line(x, hy, x + w, hy);
+                    for (let i = 1; i <= numLineas; i++) {
+                        const offset = Math.pow(i / numLineas, 2.0);
+                        const ySuelo = hy + (y + h - hy) * offset;
+                        ctx.lineWidth = 1.5 * (1 - offset + 0.2);
+                        line(x, ySuelo, x + w, ySuelo);
+                    }
+                } else {
+                    // --- Vertical ---
+                    const vx = x + w * fugaX;
+                    ctx.lineWidth = 2.5;
+                    line(vx, y, vx, y + h);
+                    for (let i = 1; i <= numLineas; i++) {
+                        const offset = Math.pow(i / numLineas, 2.0);
+                        const xPared = vx - (vx - x) * offset;
+                        ctx.lineWidth = 1.5 * (1 - offset + 0.2);
+                        line(xPared, y, xPared, y + h);
+                    }
+                }
+                ctx.globalAlpha = 1.0;
+            } else if (mode === 'comp-L') {
+                const ix = x + w * interX, iy = y + h * interY; line(x, iy, x + w, iy); line(ix, y, ix, y + h);
+                ctx.fillStyle = 'rgba(0,0,0,0.25)';
+                const aTL = interX * interY, aTR = (1 - interX) * interY, aBL = interX * (1 - interY), aBR = (1 - interX) * (1 - interY);
+                const maxA = Math.max(aTL, aTR, aBL, aBR);
+                if (aTL !== maxA) ctx.fillRect(x, y, ix - x, iy - y);
+                if (aTR !== maxA) ctx.fillRect(ix, y, (x + w) - ix, iy - y);
+                if (aBL !== maxA) ctx.fillRect(x, iy, ix - x, (y + h) - iy);
+                if (aBR !== maxA) ctx.fillRect(ix, iy, (x + w) - ix, (y + h) - iy);
+                const elapsed = time - pulseStartTime;
+                if (elapsed < 1000) {
+                    const pulse = Math.abs(Math.sin(elapsed / 200));
+                    ctx.beginPath(); ctx.arc(ix, iy, 7 + pulse * 10, 0, 7);
+                    ctx.strokeStyle = colors[cIdx]; ctx.globalAlpha = 1 - pulse; ctx.stroke(); ctx.globalAlpha = 1;
+                }
+                ctx.fillStyle = colors[cIdx]; ctx.beginPath(); ctx.arc(ix, iy, 7, 0, 7); ctx.fill();
+            } else if (mode === 'cuadrado') {
+                const s = Math.min(w, h); const ox = (w - s) / 2, oy = (h - s) / 2;
+                ctx.save(); ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+                if (w > h) { ctx.fillRect(x, y, ox, h); ctx.fillRect(x + ox + s, y, ox, h); }
+                else { ctx.fillRect(x, y, w, oy); ctx.fillRect(x, y + oy + s, w, oy); }
+                ctx.restore(); ctx.strokeRect(x + ox, y + oy, s, s);
+            } else if (mode === 'diagonales') { line(x, y, x + w, y + h); }
+        }
+
+        function line(x1, y1, x2, y2) { ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke(); }
+
+        document.getElementById('mainActionBtn').addEventListener('click', () => { toggleFullScreen(); fileInput.click(); });
+
+        document.getElementById('btn-grid').addEventListener('click', (e) => {
+            gIdx = (gIdx + 1) % grids.length;
+            if (grids[gIdx] === 'comp-L' || grids[gIdx] === 'fuga' || grids[gIdx] === 'masas') {
+                transformIdx = 0; pulseStartTime = performance.now();
+            }
+            e.target.textContent = gridLabels[gIdx];
+            updateTransformBtnState();
+        });
+
+        btnTransform.addEventListener('click', () => {
+            if (grids[gIdx] === 'masas') { mInvert = !mInvert; mThr = 255 - mThr; }
+            else if (grids[gIdx] === 'horizonte') {
+                horMode = (horMode === "H") ? "V" : "H";
+            }
+            else { transformIdx = (transformIdx + 1) % 4; }
+        });
+
+        document.getElementById('btn-color').addEventListener('click', () => { cIdx = (cIdx + 1) % colors.length; 
+            document.getElementById('color-dot').style.background = colors[cIdx]; });
+
+        const btnReset = document.getElementById('btn-reset');
+        ['mousedown', 'touchstart'].forEach(evt => btnReset.addEventListener(evt, (e) => {
+            toggleFullScreen(); // Asegura fullscreen y llama a lockPortrait()
+            if (grids[gIdx] === 'masas') { isBypass = true; }
+            else if (loadedImage) { centerImage(); fugaX = 0.5; fugaY = 0.5; transformIdx = 0; interX = 0.3; interY = 0.3; }
+            if (e.cancelable) e.preventDefault();
+        }));
+        ['mouseup', 'touchend', 'mouseleave'].forEach(evt => btnReset.addEventListener(evt, () => { isBypass = false; }));
+
+        // Llamada inicial al cargar la página
+        window.addEventListener('load', lockPortrait);
+    </script>
 </body>
+
 </html>
