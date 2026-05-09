@@ -101,7 +101,7 @@
         #btn-transform { width: 65px; }
         #btn-color { width: 44px; }
         #color-dot { width: 14px; height: 14px; border-radius: 50%; background: white; border: 1.5px solid rgba(255, 255, 255, 0.4); }
-        #btn-reset { width: 44px; font-size: 22px; }
+        #btn-reset { width: 65px; }
 
         #top-ui {
             position: absolute;
@@ -181,7 +181,7 @@
         </div>
 
         <div class="controls-area" id="controls-area">
-            <button id="btn-reset" class="ui-btn">&#8864;</button>
+            <button id="btn-reset" class="ui-btn">RESET</button>
             
             <button id="btn-grid" class="ui-btn">
                 Regla de Tercios
@@ -394,7 +394,7 @@
                     let curveX = rawX * rawX * (3 - 2 * rawX);
                     let curveY = rawY * rawY * (3 - 2 * rawY);
                     mBlur = curveY * 40; 
-                    mThr = 20 + (curveX * 235);
+                    mThr = 00 + (curveX * 235);
                 }
                 else if (dragMode === "focus") {
                     let rawY = Math.max(0, Math.min(1, ny));
