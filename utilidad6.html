@@ -393,8 +393,8 @@
                     let rawY = Math.max(0, Math.min(1, ny));
                     let curveX = rawX * rawX * (3 - 2 * rawX);
                     let curveY = rawY * rawY * (3 - 2 * rawY);
-                    mBlur = curveX * 40; 
-                    mThr = 20 + (curveY * 235);
+                    mBlur = curveY * 40; 
+                    mThr = 20 + (curveX * 235);
                 }
                 else if (dragMode === "focus") {
                     let rawY = Math.max(0, Math.min(1, ny));
