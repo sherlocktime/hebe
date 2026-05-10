@@ -733,6 +733,7 @@
         buildGridMenu();
 
         const startPress = (e) => {
+            if (e.type === 'touchstart') { e.preventDefault(); }; // TEST
             isLongPress = false;
             longPressTimer = setTimeout(() => {
                 isLongPress = true;
@@ -742,6 +743,7 @@
         };
 
         const endPress = (e) => {
+            if (e.cancelable) e.preventDefault(); // TEST
             clearTimeout(longPressTimer);
             if (!isLongPress) {
                 if (gridMenu.style.display !== 'block') {
@@ -758,8 +760,10 @@
         btnGrid.addEventListener('mouseup', endPress);
         btnGrid.addEventListener('mouseleave', cancelPress);
 
-        btnGrid.addEventListener('touchstart', startPress, { passive: true });
-        btnGrid.addEventListener('touchend', endPress);
+        // btnGrid.addEventListener('touchstart', startPress, { passive: true });
+        // btnGrid.addEventListener('touchend', endPress);
+        btnGrid.addEventListener('touchstart', startPress, { passive: false }); // TEST
+        btnGrid.addEventListener('touchend', endPress, { passive: false }); // TEST
         btnGrid.addEventListener('touchcancel', cancelPress);
 
         document.addEventListener('click', (e) => {
