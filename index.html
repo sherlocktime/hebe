@@ -66,6 +66,18 @@
         .btn-museum { background: #FFCC00; color: #000; border: none; }
         .btn-photo { background: #FFCC00; color: #000; border: none; }
 
+        #loading-msg {
+            position: absolute;
+            bottom: 18%;
+            color: rgba(255,255,255,0.7);
+            font-size: 12px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            display: none;
+            z-index: 150;
+            animation: pulse 1.2s infinite;
+        }
+
         /* UI de Control */
         .controls-area {
             position: fixed;
@@ -174,6 +186,7 @@
             <button class="main-btn btn-photo" id="action-photo">Fotografía Aleatoria</button>
             <button class="main-btn btn-museum" id="action-museum">Art Institute Chicago</button>
             <input type="file" id="file-input" accept="image/*" style="display: none;">
+            <div id="loading-msg">Cargando...</div>
         </div>
 
         <div id="top-ui">
@@ -220,14 +233,15 @@
         const ctx = canvas.getContext('2d', { willReadFrequently: true });
         const fileInput = document.getElementById('file-input');
         const splash = document.getElementById('splash-screen');
+        const loadingMsg = document.getElementById('loading-msg');
         const topUI = document.getElementById('top-ui');
         const controls = document.getElementById('controls-area');
         const btnGrid = document.getElementById('btn-grid');
         const btnTransform = document.getElementById('btn-transform');
         const btnChange = document.getElementById('btn-change');
 
-        const grids = ['tercios', 'golden', 'tri-aureos', 'espiral', 'diagonales', 'fuga', 'horizonte', 'comp-L', 'cuadrado', 'masas', 'focus'];
-        const gridLabels = ['Regla de Tercios', 'Sección Áurea', 'Triángulos Áureos', 'Espiral Fibonacci', 'Diagonales', 'Punto de Fuga', 'Horizonte', 'Composición en L', 'Recorte Cuadrado', 'Masas', 'Enfoque'];
+        const grids = ['tercios', 'golden', 'diagonales', 'tri-aureos', 'espiral', 'fuga', 'horizonte', 'reframe', 'masas', 'focus'];
+        const gridLabels = ['Regla de Tercios', 'Sección Áurea', 'Diagonales', 'Triángulos Áureos', 'Espiral Fibonacci', 'Punto de Fuga', 'Horizonte', 'Encuadre', 'Masas', 'Enfoque'];
         
         let gIdx = 0, transformIdx = 0, cIdx = 0;
         const colors = ['#FFFFFF', '#FF0088', '#00CCFF', '#FFCC00', '#00FF00', '#000000'];
@@ -238,10 +252,23 @@
         let initialImgX = 0, initialImgY = 0, initialScale = 1, initialDist = 0, initialCenter = { x: 0, y: 0 };
         let startTouches = [];
         
-        let horY = 0.5, horMode = "H", fugaX = 0.5, fugaY = 0.5, interX = 0.3, interY = 0.3;
+        let horY = 0.5, horMode = "H", fugaX = 0.5, fugaY = 0.5
+        let frameX1 = 0.2; frameY1 = 0.2; frameX2 = 0.8; frameY2 = 0.8;
+        let activeHandle = null;
+        
         let mBlur = 5, mThr = 127, mInvert = false, isBypass = false;
         let pulseStartTime = 0;
         let fThreshold = 40; 
+
+        function setLoading(state, text = "Cargando...") {
+            loadingMsg.innerText = text;
+            loadingMsg.style.display = state ? "block" : "none";
+
+            document.querySelectorAll('.main-btn').forEach(btn => {
+                btn.disabled = state;
+                btn.classList.toggle('loading', state);
+            });
+        }
 
         // --- CAJA NEGRA DE PROCESAMIENTO ---
 
@@ -285,13 +312,13 @@
                 splash.style.display = "none";
                 topUI.style.display = "flex";
                 controls.style.display = "flex";
-                btnChange.classList.remove('loading');
+                setLoading(false);
             };
         }
 
         async function loadMuseumArt(retries = 3) {
             toggleFullScreen(); // Llamada al iniciar carga
-            btnChange.classList.add('loading');
+            setLoading(true, "Buscando imagen...");
             try {
                 const page = Math.floor(Math.random() * 100) + 1;
                 const resp = await fetch(`https://api.artic.edu/api/v1/artworks/search?q=painting&page=${page}&limit=20&fields=image_id`);
@@ -313,14 +340,14 @@
                     setTimeout(() => loadMuseumArt(retries - 1), 500);
                 } else {
                     alert("El museo no responde, intenta con una foto.");
-                    btnChange.classList.remove('loading');
+                    setLoading(false);
                 }
             }
         }
 
         async function loadRandomPhoto() {
             toggleFullScreen(); // Llamada al iniciar carga
-            btnChange.classList.add('loading');
+            setLoading(true, "Buscando imagen...");
             const tempImg = new Image();
             tempImg.crossOrigin = "anonymous";
             const randomId = Math.floor(Math.random() * 1000);
@@ -329,7 +356,7 @@
             tempImg.onload = () => processImages(tempImg);
             tempImg.onerror = () => {
                 alert("Error al cargar fotografía");
-                btnChange.classList.remove('loading');
+                setLoading(false);
             };
         }
 
@@ -354,6 +381,15 @@
             imgX = (W - loadedImage.width * imgScale) / 2;
             imgY = (H - loadedImage.height * imgScale) / 2;
             fugaX = 0.5; fugaY = 0.5; transformIdx = 0;
+            initFrameCompL();
+        }
+
+        function initFrameCompL() {
+            const rw = loadedImage.width;
+            const rh = loadedImage.height;
+            const side = Math.min(rw, rh) * 0.9;
+            frameX1 = (rw - side) / 2 / rw; frameY1 = (rh - side) / 2 / rh;
+            frameX2 = (rw + side) / 2 / rw; frameY2 = (rh + side) / 2 / rh;
         }
 
         // --- INTERACCIÓN ---
@@ -366,7 +402,14 @@
                 const grid = grids[gIdx];
                 if (grid === 'fuga') dragMode = "fuga";
                 else if (grid === 'horizonte') dragMode = "horizonte";
-                else if (grid === 'comp-L') dragMode = "comp-L";
+                else if (grid === 'reframe') { dragMode = "reframe";
+                    const rw = loadedImage.width * imgScale;
+                    const rh = loadedImage.height * imgScale;
+                    const px = (startTouches[0].clientX - imgX) / rw;
+                    const py = (startTouches[0].clientY - imgY) / rh;
+                    const d1 = Math.hypot(px - frameX1, py - frameY1);
+                    const d2 = Math.hypot(px - frameX2, py - frameY2);
+                    activeHandle = d1 < d2 ? 1 : 2; }
                 else if (grid === 'masas') dragMode = "masas";
                 else if (grid === 'focus') dragMode = "focus";
                 else { dragMode = "pan"; initialImgX = imgX; initialImgY = imgY; }
@@ -388,7 +431,17 @@
                 let ny = (cur[0].clientY - imgY) / rh;
                 if (dragMode === "fuga") { fugaX = nx; fugaY = ny; }
                 else if (dragMode === "horizonte") { if(horMode === "H") horY = Math.max(0,Math.min(1,ny)); else fugaX = nx; }
-                else if (dragMode === "comp-L") { interX = nx; interY = ny; }
+            else if (dragMode === "reframe") {
+                nx = Math.max(0, Math.min(1, nx));
+                ny = Math.max(0, Math.min(1, ny));
+                if (activeHandle === 1) {
+                    frameX1 = Math.min(nx, frameX2 - 0.05);
+                    frameY1 = Math.min(ny, frameY2 - 0.05);
+                } else {
+                    frameX2 = Math.max(nx, frameX1 + 0.05);
+                    frameY2 = Math.max(ny, frameY1 + 0.05);
+                }
+            }
                 else if (dragMode === "masas") {
                     let rawX = Math.max(0, Math.min(1, nx));
                     let rawY = Math.max(0, Math.min(1, ny));
@@ -448,7 +501,7 @@
                 else if (grids[gIdx] === 'focus' && !isBypass) {
 
                     ctx.save();
-                    ctx.filter = 'grayscale(1) brightness(0.3)';
+                    ctx.filter = 'grayscale(0.25) brightness(0.25)';
                     ctx.drawImage(loadedImage, imgX, imgY, rw, rh);
                     ctx.filter = 'none';
 
@@ -531,7 +584,8 @@
             }
         }
 
-        // GRILLAS
+        // --- GRILLAS ---
+
         function drawGrid(mode, x, y, w, h, time) {
             if (mode === 'focus') return; 
             ctx.setLineDash([]); 
@@ -571,52 +625,41 @@
                 const dx = w, dy = -h;
                 const t1 = ((-h) * dy) / (dx * dx + dy * dy); line(x, y, x + t1 * dx, y + h + t1 * dy);
                 const t2 = ((w) * dx) / (dx * dx + dy * dy); line(x + w, y + h, x + t2 * dx, y + h + t2 * dy);
-        } else if (mode === 'espiral') {
-                const phi = 1.61803398875;
-                let th = h, tw = h / phi; 
-                
-                if (tw > w) {
-                    tw = w;
-                    th = w * phi;
-                }
+            } else if (mode === 'espiral') {
+                    const phi = 1.61803398875;
+                    let th = h, tw = h / phi; 
+                    if (tw > w) {
+                        tw = w;
+                        th = w * phi; }
+                    let cX = x + (w - tw) / 2;
+                    let cY = y + (h - th) / 2;
+                    let cW = tw, cH = th;
 
-                let cX = x + (w - tw) / 2;
-                let cY = y + (h - th) / 2;
-                let cW = tw, cH = th;
-
-                for (let j = 0; j < 10; j++) {
-                    let i = (j + 1) % 4; 
-                    let s = Math.min(cW, cH);
-                    if (s < 1) break;
-
-                    let sqX = cX, sqY = cY;
-                    if (i === 2) sqX = cX + cW - s;
-                    if (i === 3) sqY = cY + cH - s;
-
-                    ctx.save();
-                    ctx.globalAlpha = 0.4;
-                    ctx.lineWidth = 0.8;
-                    ctx.beginPath();
-                    ctx.rect(sqX, sqY, s, s);
-                    ctx.stroke();
-                    ctx.restore();
-
-                    ctx.beginPath();
-                    if (i === 0) {
-                        ctx.arc(sqX + s, sqY + s, s, Math.PI, 1.5 * Math.PI);
-                        cX += s; cW -= s;
-                    } else if (i === 1) {
-                        ctx.arc(sqX, sqY + s, s, 1.5 * Math.PI, 2 * Math.PI);
-                        cY += s; cH -= s;
-                    } else if (i === 2) {
-                        ctx.arc(sqX, sqY, s, 0, 0.5 * Math.PI);
-                        cW -= s;
-                    } else if (i === 3) {
-                        ctx.arc(sqX + s, sqY, s, 0.5 * Math.PI, Math.PI);
-                        cH -= s;
+                    for (let j = 0; j < 10; j++) {
+                        let i = (j + 1) % 4; 
+                        let s = Math.min(cW, cH);
+                        if (s < 1) break;
+                        let sqX = cX, sqY = cY;
+                        if (i === 2) sqX = cX + cW - s;
+                        if (i === 3) sqY = cY + cH - s;
+                        ctx.save();
+                        ctx.globalAlpha = 0.4; 
+                        ctx.lineWidth = 0.8;
+                        ctx.beginPath(); 
+                        ctx.rect(sqX, sqY, s, s);
+                        ctx.stroke(); ctx.restore(); 
+                        ctx.beginPath();
+                        if (i === 0) {
+                            ctx.arc(sqX + s, sqY + s, s, Math.PI, 1.5 * Math.PI); cX += s; cW -= s;
+                        } else if (i === 1) {
+                            ctx.arc(sqX, sqY + s, s, 1.5 * Math.PI, 2 * Math.PI); cY += s; cH -= s;
+                        } else if (i === 2) {
+                            ctx.arc(sqX, sqY, s, 0, 0.5 * Math.PI); cW -= s;
+                        } else if (i === 3) {
+                            ctx.arc(sqX + s, sqY, s, 0.5 * Math.PI, Math.PI); cH -= s;
+                        }
+                        ctx.stroke();
                     }
-                    ctx.stroke();
-                }
             } else if (mode === 'diagonales') { 
                 const state = transformIdx % 4;
                 if (state === 0) {
@@ -669,29 +712,19 @@
                     }
                 }
                 ctx.globalAlpha = 1.0;
-            } else if (mode === 'comp-L') {
-                const ix = x + w * interX, iy = y + h * interY; 
-                line(x, iy, x + w, iy); line(ix, y, ix, y + h);
-                ctx.fillStyle = 'rgba(0,0,0,0.25)';
-                const aTL = interX * interY, aTR = (1 - interX) * interY, aBL = interX * (1 - interY), aBR = (1 - interX) * (1 - interY);
-                const maxA = Math.max(aTL, aTR, aBL, aBR);
-                if (aTL !== maxA) ctx.fillRect(x, y, ix - x, iy - y);
-                if (aTR !== maxA) ctx.fillRect(ix, y, (x + w) - ix, iy - y);
-                if (aBL !== maxA) ctx.fillRect(x, iy, ix - x, (y + h) - iy);
-                if (aBR !== maxA) ctx.fillRect(ix, iy, (x + w) - ix, (y + h) - iy);
-                const elapsed = time - pulseStartTime;
-                if (elapsed < 1000) {
-                    const pulse = Math.abs(Math.sin(elapsed / 200));
-                    ctx.beginPath(); ctx.arc(ix, iy, 7 + pulse * 10, 0, 7);
-                    ctx.strokeStyle = colors[cIdx]; ctx.globalAlpha = 1 - pulse; ctx.stroke(); ctx.globalAlpha = 1;
-                }
-                ctx.fillStyle = colors[cIdx]; ctx.beginPath(); ctx.arc(ix, iy, 7, 0, 7); ctx.fill();
-            } else if (mode === 'cuadrado') {
-                const s = Math.min(w, h); const ox = (w - s) / 2, oy = (h - s) / 2;
-                ctx.save(); ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
-                if (w > h) { ctx.fillRect(x, y, ox, h); ctx.fillRect(x + ox + s, y, ox, h); }
-                else { ctx.fillRect(x, y, w, oy); ctx.fillRect(x, y + oy + s, w, oy); }
-                ctx.restore(); ctx.strokeRect(x + ox, y + oy, s, s);
+            } else if (mode === 'reframe') {
+                const x1 = x + w * frameX1; const y1 = y + h * frameY1;
+                const x2 = x + w * frameX2; const y2 = y + h * frameY2;
+                ctx.fillStyle = 'rgba(0,0,0,0.65)'
+                ctx.fillRect(x, y, w, y1 - y);
+                ctx.fillRect(x, y1, x1 - x, y2 - y1);
+                ctx.fillRect(x2, y1, (x + w) - x2, y2 - y1);
+                ctx.fillRect(x, y2, w, (y + h) - y2);
+                const s = 16;
+                ctx.strokeStyle = colors[cIdx];
+                ctx.lineWidth = 1;
+                line(x1 - s, y1, x1 + s, y1); line(x1, y1 - s, x1, y1 + s); // + TL
+                line(x2 + s, y2, x2 - s, y2); line(x2, y2 + s, x2, y2 - s); // + BR
             }
         }
 
@@ -739,8 +772,9 @@
             gIdx = index;
             btnGrid.firstChild.textContent = gridLabels[gIdx] + " "; 
             transformIdx = 0; 
-            if (['fuga', 'comp-L'].includes(grids[gIdx])) pulseStartTime = performance.now();
-            const noTransform = ['cuadrado', 'fuga', 'comp-L', 'focus'].includes(grids[gIdx]);
+            if (grids[gIdx] === 'fuga') pulseStartTime = performance.now();
+            if (grids[gIdx] === 'reframe') initFrameCompL();
+            const noTransform = ['fuga', 'focus', 'reframe'].includes(grids[gIdx]);
             btnTransform.style.opacity = noTransform ? "0.5" : "1";
             btnTransform.style.pointerEvents = noTransform ? "none" : "auto";
             buildGridMenu(); 
@@ -767,7 +801,7 @@
         btnTransform.onclick = () => {
             if (grids[gIdx] === 'masas') mInvert = !mInvert;
             else if (grids[gIdx] === 'horizonte') horMode = (horMode === "H") ? "V" : "H";
-            else if (['cuadrado', 'fuga', 'comp-L', 'focus'].includes(grids[gIdx])) { transformIdx = 0; }
+            else if (['fuga', 'reframe', 'focus'].includes(grids[gIdx])) { transformIdx = 0; }
             else transformIdx = (transformIdx + 1) % 4;
         };
 
