@@ -227,7 +227,7 @@
         const btnChange = document.getElementById('btn-change');
 
         const grids = ['tercios', 'golden', 'tri-aureos', 'espiral', 'diagonales', 'fuga', 'horizonte', 'comp-L', 'cuadrado', 'masas', 'focus'];
-        const gridLabels = ['Regla de Tercios', 'Sección Áurea', 'Triángulos Áureos', 'Espiral Fibonacci', 'Diagonales', 'Punto de Fuga', 'Horizonte', 'Composición en L', 'Recorte Cuadrado', 'Balance', 'Enfoque'];
+        const gridLabels = ['Regla de Tercios', 'Sección Áurea', 'Triángulos Áureos', 'Espiral Fibonacci', 'Diagonales', 'Punto de Fuga', 'Horizonte', 'Composición en L', 'Recorte Cuadrado', 'Masas', 'Enfoque'];
         
         let gIdx = 0, transformIdx = 0, cIdx = 0;
         const colors = ['#FFFFFF', '#FF0088', '#00CCFF', '#FFCC00', '#00FF00', '#000000'];
@@ -247,7 +247,8 @@
 
         function processImages(img) {
             let w = img.width, h = img.height;
-            let needsRotate = w > h; 
+            const isMobile = window.matchMedia("(pointer: coarse)").matches;
+            let needsRotate = isMobile && (w > h);
             
             function createVariant(maxDim) {
                 let tw = img.width, th = img.height;
@@ -393,7 +394,7 @@
                     let rawY = Math.max(0, Math.min(1, ny));
                     let curveX = rawX * rawX * (3 - 2 * rawX);
                     let curveY = rawY * rawY * (3 - 2 * rawY);
-                    mBlur = curveY * 40; 
+                    mBlur = curveY * 40;
                     mThr = curveX * 235;
                 }
                 else if (dragMode === "focus") {
@@ -401,8 +402,8 @@
                     fThreshold = 5 + (rawY * 200);
                 }
                 else { 
-                    imgX = initialImgX + (cur[0].clientX - startTouches[0].clientX); 
-                    imgY = initialImgY + (cur[0].clientY - startTouches[0].clientY); 
+                    imgX = initialImgX + (cur[0].clientX - startTouches[0].clientX);
+                    imgY = initialImgY + (cur[0].clientY - startTouches[0].clientY);
                 }
             } else if (cur.length === 2) {
                 const newDist = Math.hypot(cur[0].clientX - cur[1].clientX, cur[0].clientY - cur[1].clientY);
