@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Analizar Composición utilizando la Cámara</title>
+    <style>
+        body { margin: 0; padding: 0; background-color: #000; color: white; font-family: sans-serif; overflow: hidden; height: 100dvh; }
+        #container { position: relative; width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; touch-action: none; }
+        video { position: absolute; width: 100%; height: 100%; object-fit: cover; z-index: 1; }
+        canvas { position: absolute; z-index: 2; pointer-events: auto; }
+
+        #top-ui {
+            position: absolute;
+            top: calc(10px + env(safe-area-inset-top, 0px));
+            left: 0; right: 0;
+            z-index: 30;
+            display: none;
+            gap: 10px;
+            padding: 0 15px;
+            pointer-events: none;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .ui-btn {
+            pointer-events: auto;
+            background: rgba(0, 0, 0, 0.6);
+            color: white;
+            border: 1.5px solid rgba(255,255,255,0.3);
+            border-radius: 12px;
+            height: 44px;
+            font-size: 11px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-transform: uppercase;
+            backdrop-filter: blur(5px);
+        }
+
+        #btn-grid { flex: 1; max-width: 180px; padding: 0 10px; }
+        #btn-color { width: 44px; padding: 0; }
+        #color-dot { width: 14px; height: 14px; border-radius: 50%; background: white; border: 1.5px solid rgba(255,255,255,0.4); }
+        #btn-reset { width: 44px; font-size: 22px; }
+
+        #mainActionBtn { position: absolute; z-index: 40; padding: 18px 40px; font-size: 16px; border-radius: 30px; border: none; background: white; color: black; font-weight: bold; }
+
+        .controls-area {
+            position: fixed;
+            bottom: calc(30px + env(safe-area-inset-bottom, 0px));
+            width: 100%;
+            display: none;
+            justify-content: center;
+            pointer-events: none;
+            z-index: 50;
+        }
+
+        #btn-shutter {
+            width: 72px;
+            height: 72px;
+            border-radius: 50%;
+            border: 4px solid white;
+            background: transparent;
+            cursor: pointer;
+            pointer-events: auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-sizing: border-box;
+            outline: none;
+            padding: 0;
+        }
+
+        #btn-shutter-inner {
+            width: 54px;
+            height: 54px;
+            background: white;
+            border-radius: 50%;
+            transition: background 0.3s ease, transform 0.2s ease;
+        }
+
+        #btn-shutter.is-frozen #btn-shutter-inner {
+            background: #007AFF;
+            transform: scale(0.85);
+        }
+
+        #btn-shutter:active {
+            transform: scale(0.9);
+            background: rgba(255, 255, 255, 0.1);
+        }
+    </style>
+</head>
+<body>
+
+<div id="container">
+    <video id="video" autoplay playsinline muted></video>
+    <canvas id="canvas"></canvas>
+
+    <button id="mainActionBtn">COMENZAR</button>
+
+    <div id="top-ui">
+        <button id="btn-grid" class="ui-btn">Regla de Tercios</button>
+        <button id="btn-color" class="ui-btn"><div id="color-dot"></div></button>
+        <button id="btn-reset" class="ui-btn" title="Reset">&#8864;</button>
+    </div>
+
+    <div class="controls-area" id="controls-area">
+        <button id="btn-shutter">
+            <div id="btn-shutter-inner"></div>
+        </button>
+    </div>
+</div>
+
+<script>
+    const video = document.getElementById('video');
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    const freezeCanvas = document.createElement('canvas');
+    const fCtx = freezeCanvas.getContext('2d');
+
+    const grids = [
+        'tercios',
+        'golden',
+        'tri-aureos',
+        'espiral',
+        'diagonales',
+        'fuga',
+        'horizonte',
+        'comp-L',
+        'cuadrado'
+    ];
+
+    const gridLabels = [
+        'Regla de Tercios',
+        'Sección Áurea',
+        'Triángulos Áureos',
+        'Espiral Fibonacci',
+        'Diagonales',
+        'Punto de Fuga',
+        'Horizonte',
+        'Composición L',
+        'Recorte Cuadrado'
+    ];
+
+    let gIdx = 0;
+
+    const colors = ['#FFFFFF', '#FF3B30', '#4CD964', '#FFCC00', '#007AFF'];
+    let cIdx = 0;
+
+    let isRunning = false;
+    let isFrozen = false;
+    let marginX = 0.05;
+    let borderY = 0.25; // Valor temporal hasta el primer reset
+    let isDragging = false;
+    let dragMode = "none";
+    let fugaX = 0.5;
+    let fugaY = 0.5;
+
+    let lastFrameTime = 0;
+    const fpsLimit = 30;
+
+    function aplicarRectanguloDorado() {
+        const W = window.innerWidth;
+        const H = window.innerHeight;
+        const goldenRatio = 1.618;
+        const rectW = W * (1 - 2 * marginX);
+        const goldenH = rectW * goldenRatio;
+        let calculatedBorder = (H - goldenH) / (2 * H);
+        borderY = Math.max(0.02, Math.min(0.45, calculatedBorder));
+        fugaX = 0.5;
+        fugaY = 0.5;
+    }
+
+
+
+    let W = 0;
+    let H = 0;
+
+    function resizeCanvas(){
+        W = window.innerWidth;
+        H = window.innerHeight;
+        canvas.width = W;
+        canvas.height = H;
+    }
+
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+
+
+
+    // Inicializar dimensiones
+    aplicarRectanguloDorado();
+
+    async function lockPortrait() {
+        try { if (screen.orientation && screen.orientation.lock) await screen.orientation.lock('portrait'); } catch (e) {}
+    }
+
+    function handleStart(e) {
+        if (!isRunning) return;
+        const rect = canvas.getBoundingClientRect();
+        const touchY = (e.touches ? e.touches[0].clientY : e.clientY) - rect.top;
+        const H = window.innerHeight;
+
+        const currentTop = H * borderY;
+        const currentBottom = H * (1 - borderY);
+        const handleThreshold = 50; // Sensibilidad de la zona de las manijas
+
+        // Cambiar: Solo arrastra si el toque es cerca de las manijas superior o inferior
+        if (Math.abs(touchY - currentTop) < handleThreshold || Math.abs(touchY - currentBottom) < handleThreshold) {
+            isDragging = true;
+            dragMode = "frame";
+        } else if (grids[gIdx] === 'fuga') {
+            isDragging = true;
+            dragMode = "fuga";
+        }
+
+        if (isDragging) handleMove(e);
+    }
+
+    function handleMove(e) {
+        if (!isDragging || !isRunning) return;
+        const rect = canvas.getBoundingClientRect();
+        const touchX = (e.touches ? e.touches[0].clientX : e.clientX) - rect.left;
+        const touchY = (e.touches ? e.touches[0].clientY : e.clientY) - rect.top;
+        const W = window.innerWidth, H = window.innerHeight;
+        const rectW = W * (1 - 2 * marginX);
+        const rectH = H * (1 - 2 * borderY);
+        const startX = W * marginX;
+        const startY = H * borderY;
+
+        if (dragMode === "frame") {
+            let normalizedY = touchY / H;
+            if (normalizedY > 0.5) normalizedY = 1 - normalizedY;
+            borderY = Math.max(0.01, Math.min(0.48, normalizedY));
+        } else if (dragMode === "fuga") {
+            fugaX = (touchX - startX) / rectW;
+            fugaY = (touchY - startY) / rectH;
+        }
+    }
+
+    canvas.addEventListener('touchstart', handleStart, {passive: false});
+    canvas.addEventListener('touchmove', handleMove, {passive: false});
+    canvas.addEventListener('touchend', () => { isDragging = false; dragMode = "none"; });
+    canvas.addEventListener('mousedown', handleStart);
+    window.addEventListener('mousemove', (e) => isDragging && handleMove(e));
+    window.addEventListener('mouseup', () => { isDragging = false; dragMode = "none"; });
+
+    function render(now) {
+        if (!isRunning) return;
+        if (now - lastFrameTime < (1000 / fpsLimit)) {
+            requestAnimationFrame(render);
+            return;
+        }
+        lastFrameTime = now;
+
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        const W = canvas.width, H = canvas.height;
+        const rectW = W * (1 - 2 * marginX);
+        const rectH = H * (1 - 2 * borderY);
+        const x = W * marginX, y = H * borderY;
+
+        ctx.clearRect(0, 0, W, H);
+
+        if (isFrozen) {
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.9)';
+            ctx.fillRect(0, 0, W, H);
+            ctx.save();
+            ctx.beginPath(); ctx.rect(x, y, rectW, rectH); ctx.clip();
+            const imgW = freezeCanvas.width, imgH = freezeCanvas.height;
+            const imgRatio = imgW / imgH;
+            const containerRatio = W / H;
+            let sX, sY, sW, sH;
+            if (imgRatio > containerRatio) {
+                sH = imgH; sW = imgH * containerRatio; sX = (imgW - sW) / 2; sY = 0;
+            } else {
+                sW = imgW; sH = imgW / containerRatio; sX = 0; sY = (imgH - sH) / 2;
+            }
+            ctx.drawImage(freezeCanvas, sX, sY, sW, sH, 0, 0, W, H);
+            ctx.restore();
+        } else {
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+            ctx.fillRect(0, 0, W, H);
+            ctx.globalCompositeOperation = 'destination-out';
+            ctx.fillRect(x, y, rectW, rectH);
+            ctx.globalCompositeOperation = 'source-over';
+        }
+
+        ctx.save();
+        ctx.beginPath(); ctx.rect(x, y, rectW, rectH); ctx.clip();
+        ctx.strokeStyle = colors[cIdx];
+        ctx.fillStyle = colors[cIdx];
+        ctx.lineWidth = 1.5;
+        drawGrid(grids[gIdx], x, y, rectW, rectH);
+        ctx.restore();
+
+        ctx.strokeStyle = colors[cIdx];
+        ctx.lineWidth = 2.5;
+        ctx.strokeRect(x, y, rectW, rectH);
+        ctx.fillStyle = colors[cIdx];
+        ctx.globalAlpha = 0.6;
+        ctx.fillRect(W/2 - 25, y - 2, 50, 4);
+        ctx.fillRect(W/2 - 25, y + rectH - 2, 50, 4);
+        ctx.globalAlpha = 1.0;
+
+        requestAnimationFrame(render);
+    }
+
+    function drawGrid(mode, x, y, w, h) {
+
+        ctx.setLineDash([]);
+        ctx.lineWidth = 1.5;
+
+        if (mode === 'tercios') {
+
+            for (let i = 1; i < 3; i++) {
+                line(x + w * i / 3, y, x + w * i / 3, y + h);
+                line(x, y + h * i / 3, x + w, y + h * i / 3);
+            }
+        }
+
+        else if (mode === 'golden') {
+
+            const p = 0.618;
+
+            line(x + w * p, y, x + w * p, y + h);
+            line(x + w * (1 - p), y, x + w * (1 - p), y + h);
+
+            line(x, y + h * p, x + w, y + h * p);
+            line(x, y + h * (1 - p), x + w, y + h * (1 - p));
+        }
+
+        else if (mode === 'tri-aureos') {
+
+            line(x, y + h, x + w, y);
+
+            const dx = w;
+            const dy = -h;
+
+            const t1 = ((-h) * dy) / (dx * dx + dy * dy);
+            line(x, y, x + t1 * dx, y + h + t1 * dy);
+
+            const t2 = ((w) * dx) / (dx * dx + dy * dy);
+            line(x + w, y + h, x + t2 * dx, y + h + t2 * dy);
+        }
+
+        else if (mode === 'espiral') {
+            // placeholder compatible (lo podés portar después del otro)
+            line(x, y, x + w, y + h);
+        }
+
+        else if (mode === 'diagonales') {
+            line(x, y, x + w, y + h);
+            line(x + w, y, x, y + h);
+        }
+
+        else if (mode === 'fuga') {
+
+            const fx = x + w * fugaX;
+            const fy = y + h * fugaY;
+
+            ctx.setLineDash([5,5]);
+
+            line(x, fy, x + w, fy);
+            line(fx, y, fx, y + h);
+
+            ctx.setLineDash([]);
+
+            line(x, y, fx, fy);
+            line(x + w, y, fx, fy);
+            line(x, y + h, fx, fy);
+            line(x + w, y + h, fx, fy);
+
+            ctx.beginPath();
+            ctx.arc(fx, fy, 5, 0, 7);
+            ctx.fill();
+        }
+
+        else if (mode === 'horizonte') {
+
+            const hy = y + h * horY;
+
+            line(x, hy, x + w, hy);
+        }
+
+        else if (mode === 'comp-L') {
+
+            const ix = x + w * 0.5;
+            const iy = y + h * 0.5;
+
+            line(x, iy, x + w, iy);
+            line(ix, y, ix, y + h);
+        }
+
+        else if (mode === 'cuadrado') {
+
+            const s = Math.min(w, h);
+
+            ctx.strokeRect(
+                x + (w - s) / 2,
+                y + (h - s) / 2,
+                s,
+                s
+            );
+        }
+    }
+
+    function line(x1, y1, x2, y2) { ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke(); }
+
+
+    function startCamera() {
+        document.documentElement.requestFullscreen().then(() => {
+            lockPortrait();
+            // Recalcular una vez en fullscreen para evitar estiramientos
+            setTimeout(aplicarRectanguloDorado, 300);
+        }).catch(() => {});
+
+        navigator.mediaDevices.getUserMedia({
+            video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } }
+        })
+        .then(s => {
+            video.srcObject = s;
+            video.onloadedmetadata = () => {
+                isRunning = true;
+                document.getElementById('mainActionBtn').style.display = "none";
+                document.getElementById('top-ui').style.display = "flex";
+                document.getElementById('controls-area').style.display = "flex";
+                render(0);
+            };
+        });
+    }
+
+    document.getElementById('mainActionBtn').addEventListener('click', startCamera);
+
+    const shutter = document.getElementById('btn-shutter');
+    shutter.addEventListener('click', () => {
+        isFrozen = !isFrozen;
+        shutter.classList.toggle('is-frozen');
+
+        if (isFrozen) {
+            freezeCanvas.width = video.videoWidth;
+            freezeCanvas.height = video.videoHeight;
+            fCtx.drawImage(video, 0, 0);
+        }
+    });
+
+    document.getElementById('btn-grid').addEventListener('click', (e) => {
+        gIdx = (gIdx + 1) % grids.length;
+        e.target.textContent = gridLabels[gIdx];
+    });
+
+    document.getElementById('btn-color').addEventListener('click', () => {
+        cIdx = (cIdx + 1) % colors.length;
+        document.getElementById('color-dot').style.background = colors[cIdx];
+    });
+
+    document.getElementById('btn-reset').addEventListener('click', aplicarRectanguloDorado);
+
+    document.addEventListener("visibilitychange", () => {
+        if (document.hidden) isRunning = false;
+        else if (video.srcObject) { isRunning = true; render(0); }
+    });
+</script>
+</body>
+</html>
