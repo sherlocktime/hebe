@@ -251,6 +251,7 @@
         
         let gIdx = 0, transformIdx = 0, cIdx = 0;
         const colors = ['#FFFFFF', '#FF0088', '#00CCFF', '#FFCC00', '#00FF00', '#000000'];
+        const color_masas = ['#FFFFFF', '#FF0088', '#00CCFF', '#FFCC00', '#00FF00', '#888888'];
 
         let loadedImage = null, masasImage = null;
         let isRunning = false, isDragging = false, dragMode = "none";
@@ -495,10 +496,23 @@
                     ctx.drawImage(masasImage, imgX, imgY, rw, rh);
                     const imgData = ctx.getImageData(imgX, imgY, rw, rh);
                     const data = imgData.data;
+                    const hex = color_masas[cIdx].replace('#', '');
+                    const cr = parseInt(hex.substring(0, 2), 16);
+                    const cg = parseInt(hex.substring(2, 4), 16);
+                    const cb = parseInt(hex.substring(4, 6), 16);
+
                     for (let i = 0; i < data.length; i += 4) {
                         let v = data[i] > mThr ? 255 : 0;
                         if (mInvert) v = 255 - v;
-                        data[i] = data[i + 1] = data[i + 2] = v;
+                        if (v === 255) {
+                            data[i]     = cr;
+                            data[i + 1] = cg;
+                            data[i + 2] = cb;
+                        } else {
+                            data[i]     = 0;
+                            data[i + 1] = 0;
+                            data[i + 2] = 0;
+                        }
                     }
                     ctx.filter = 'none';
                     ctx.putImageData(imgData, imgX, imgY);
