@@ -610,7 +610,7 @@
             if (mode === 'focus') return; 
             ctx.setLineDash([]); 
             ctx.lineWidth = 1.5;
-
+            
             if (mode === 'tercios') {
                 if (transformIdx % 2 === 0) {
                     for (let i = 1; i < 3; i++) {
@@ -620,7 +620,12 @@
                 } else {
                     for (let i = 1; i < 3; i++) {
                         for (let j = 1; j < 3; j++) {
-                            ctx.beginPath(); ctx.arc(x + w * i / 3, y + h * j / 3, 9, 0, 6.3); ctx.stroke();
+                            const s = 5;
+                            const nx = x + w * i / 3;
+                            const ny = y + h * j / 3;
+                            ctx.beginPath(); ctx.arc(nx, ny, 11, 0, 6.3); ctx.stroke();
+                            line(nx - s, ny - s, nx + s, ny + s);
+                            line(nx + s, ny - s, nx - s, ny + s);
                         }
                     }
                 }
