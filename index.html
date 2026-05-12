@@ -680,27 +680,43 @@
                         }
                         ctx.stroke();
                     }
-            } else if (mode === 'diagonales') { 
-                const state = transformIdx % 4;
+            } else if (mode === 'diagonales') {
+
+                const state = transformIdx % 4; const s = 20;
+                function marca45(cornerX, cornerY, dirX, dirY, s) {
+                    const cx = cornerX + dirX * s * 0.5;
+                    const cy = cornerY + dirY * s * 0.5;
+                    line( cx - dirX * s * 0.5,  cy + dirY * s * 0.5, cx + dirX * s * 0.5, cy - dirY * s * 0.5
+                    );
+                }
+
                 if (state === 0) {
                     line(x + w, y, x, y + h);
                 } else if (state === 1) {
                     if (w > h) {
                         line(x, y, x + h, y + h);
+                        marca45(x, y, +1, +1, s);
                         line(x + w, y + h, x + w - h, y);
+                        marca45(x + w, y + h, -1, -1, s);
                     } else {
                         line(x, y, x + w, y + w);
+                        marca45(x, y, +1, +1, s);
                         line(x + w, y + h, x, y + h - w);
+                        marca45(x + w, y + h, -1, -1, s);
                     }
                 } else if (state === 2) {
                     line(x, y, x + w, y + h);
                 } else if (state === 3) {
                     if (w > h) {
                         line(x + w, y, x + w - h, y + h);
+                        marca45(x + w, y, -1, +1, s);
                         line(x, y + h, x + h, y);
+                        marca45(x, y + h, +1, -1, s);
                     } else {
                         line(x + w, y, x, y + w);
+                        marca45(x + w, y, -1, +1, s);
                         line(x, y + h, x + w, y + h - w);
+                        marca45(x, y + h, +1, -1, s);
                     }
                 }
             } else if (mode === 'fuga') {
@@ -733,9 +749,11 @@
                 }
                 ctx.globalAlpha = 1.0;
             } else if (mode === 'reframe') {
-                const x1 = x + w * frameX1; const y1 = y + h * frameY1;
-                const x2 = x + w * frameX2; const y2 = y + h * frameY2;
-                ctx.fillStyle = 'rgba(0,0,0,0.65)'
+                const x1 = Math.round(x + w * frameX1);
+                const y1 = Math.round(y + h * frameY1);
+                const x2 = Math.round(x + w * frameX2);
+                const y2 = Math.round(y + h * frameY2);
+                ctx.fillStyle = 'rgba(0,0,0,0.75)'
                 ctx.fillRect(x, y, w, y1 - y);
                 ctx.fillRect(x, y1, x1 - x, y2 - y1);
                 ctx.fillRect(x2, y1, (x + w) - x2, y2 - y1);
