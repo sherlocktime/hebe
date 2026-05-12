@@ -620,12 +620,10 @@
                 } else {
                     for (let i = 1; i < 3; i++) {
                         for (let j = 1; j < 3; j++) {
-                            const s = 5;
                             const nx = x + w * i / 3;
                             const ny = y + h * j / 3;
-                            ctx.beginPath(); ctx.arc(nx, ny, 11, 0, 6.3); ctx.stroke();
-                            line(nx - s, ny - s, nx + s, ny + s);
-                            line(nx + s, ny - s, nx - s, ny + s);
+                            ctx.beginPath(); ctx.arc(nx, ny, 9, 0, 6.3); ctx.stroke();
+                            ctx.beginPath(); ctx.arc(nx, ny, 12, 0, 6.3); ctx.stroke();
                         }
                     }
                 }
