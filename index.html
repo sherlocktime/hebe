@@ -207,7 +207,7 @@
                 <div id="grid-menu"></div>
             </button>
             
-            <button id="btn-transform" class="ui-btn">MODO</button>
+            <button id="btn-transform" class="ui-btn">ALT</button>
             <button id="btn-color" class="ui-btn"><div id="color-dot"></div></button>
         </div>
     </div>
@@ -684,10 +684,11 @@
 
                 const state = transformIdx % 4; const s = 20;
                 function marca45(cornerX, cornerY, dirX, dirY, s) {
+                    ctx.save(); ctx.globalAlpha = 0.5;
                     const cx = cornerX + dirX * s * 0.5;
                     const cy = cornerY + dirY * s * 0.5;
-                    line( cx - dirX * s * 0.5,  cy + dirY * s * 0.5, cx + dirX * s * 0.5, cy - dirY * s * 0.5
-                    );
+                    line( cx - dirX * s * 0.5,  cy + dirY * s * 0.5, cx + dirX * s * 0.5, cy - dirY * s * 0.5 );
+                    ctx.restore();
                 }
 
                 if (state === 0) {
