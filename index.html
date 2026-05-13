@@ -666,7 +666,7 @@
 
       function autoK(pixels) {
         const complexity = estimateColorComplexity(pixels);
-        let k = Math.round(complexity / 15);
+        let k = Math.round(complexity / 20);
         console.log(k);
         return Math.max(3, Math.min(k, 15));
       }
@@ -889,17 +889,22 @@
             ctx.restore();
             const bandW = rw / paletteColors.length;
             let offset = imgX;
+            
+            ctx.save();
+            ctx.lineWidth = 1;
 
             for (const cluster of paletteColors) {
               const [r, g, b] = cluster.color;
               ctx.fillStyle = `rgb(${r}, ${g}, ${b})`;
               ctx.fillRect(offset, imgY, bandW + 1, rh);
 
-              ctx.strokeStyle = colors[cIdx];
+              ctx.save(); ctx.globalAlpha = 0.4;
               ctx.strokeRect(offset, imgY, bandW, rh);
+              ctx.restore();
 
               offset += bandW;
             }
+            ctx.restore();
           }
 
           // Contexto Grillas
@@ -1035,46 +1040,32 @@
         } else if (mode === "diagonales") {
           const state = transformIdx % 4;
           const s = 20;
+
           function marca45(cornerX, cornerY, dirX, dirY, s) {
-            ctx.save();
-            ctx.globalAlpha = 0.5;
-            const cx = cornerX + dirX * s * 0.5;
-            const cy = cornerY + dirY * s * 0.5;
-            line(
-              cx - dirX * s * 0.5,
-              cy + dirY * s * 0.5,
-              cx + dirX * s * 0.5,
-              cy - dirY * s * 0.5,
-            );
-            ctx.restore();
+            ctx.beginPath();
+            ctx.arc(cornerX, cornerY, 15, 0, 6.3);
+            ctx.stroke();
           }
+
           if (state === 0) {
             line(x + w, y, x, y + h);
           } else if (state === 1) {
             if (w > h) {
-              line(x, y, x + h, y + h);
-              marca45(x, y, +1, +1, s);
-              line(x + w, y + h, x + w - h, y);
-              marca45(x + w, y + h, -1, -1, s);
+              line(x, y, x + h, y + h); marca45(x, y);
+              line(x + w, y + h, x + w - h, y); marca45(x + w, y + h);
             } else {
-              line(x, y, x + w, y + w);
-              marca45(x, y, +1, +1, s);
-              line(x + w, y + h, x, y + h - w);
-              marca45(x + w, y + h, -1, -1, s);
+              line(x, y, x + w, y + w); marca45(x, y);
+              line(x + w, y + h, x, y + h - w); marca45(x + w, y + h);
             }
           } else if (state === 2) {
             line(x, y, x + w, y + h);
           } else if (state === 3) {
             if (w > h) {
-              line(x + w, y, x + w - h, y + h);
-              marca45(x + w, y, -1, +1, s);
-              line(x, y + h, x + h, y);
-              marca45(x, y + h, +1, -1, s);
+              line(x + w, y, x + w - h, y + h); marca45(x + w, y);
+              line(x, y + h, x + h, y); marca45(x, y + h);
             } else {
-              line(x + w, y, x, y + w);
-              marca45(x + w, y, -1, +1, s);
-              line(x, y + h, x + w, y + h - w);
-              marca45(x, y + h, +1, -1, s);
+              line(x + w, y, x, y + w); marca45(x + w, y);
+              line(x, y + h, x + w, y + h - w); marca45(x, y + h);
             }
           }
         } else if (mode === "fuga") {
