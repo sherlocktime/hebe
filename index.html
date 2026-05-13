@@ -666,9 +666,9 @@
 
       function autoK(pixels) {
         const complexity = estimateColorComplexity(pixels);
-        let k = Math.round(complexity / 25);
+        let k = Math.round(complexity / 10);
         console.log(k);
-        return Math.max(3, Math.min(k, 15));
+        return Math.max(3, Math.min(k, 10));
       }
 
       // --- INTERACCIÓN ---
