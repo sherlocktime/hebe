@@ -666,9 +666,9 @@
 
       function autoK(pixels) {
         const complexity = estimateColorComplexity(pixels);
-        let k = Math.round(complexity / 10);
+        let k = Math.round(complexity / 15);
         console.log(k);
-        return Math.max(3, Math.min(k, 10));
+        return Math.max(3, Math.min(k, 15));
       }
 
       // --- INTERACCIÓN ---
@@ -894,6 +894,10 @@
               const [r, g, b] = cluster.color;
               ctx.fillStyle = `rgb(${r}, ${g}, ${b})`;
               ctx.fillRect(offset, imgY, bandW + 1, rh);
+
+              ctx.strokeStyle = colors[cIdx];
+              ctx.strokeRect(offset, imgY, bandW, rh);
+
               offset += bandW;
             }
           }
