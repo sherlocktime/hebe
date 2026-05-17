@@ -239,7 +239,7 @@ function generatePalette() {
     return scoreB - scoreA;
   });
 
-  clusters = clusters.slice(0, 8);
+  clusters = clusters.slice(0, 6); // RECORTE 6 COLORES MAX
   clusters.sort((a, b) => a.light - b.light);
   paletteColors = clusters;
   paletteDirty = false;
@@ -650,7 +650,7 @@ function drawGrid(mode, x, y, w, h, time) {
     ctx.fillRect(x2, y1, x + w - x2, y2 - y1); ctx.fillRect(x, y2, w, y + h - y2);
     
     const s = 16;
-    ctx.strokeStyle = colors[cIdx]; ctx.lineWidth = 1;
+    ctx.strokeStyle = colors[cIdx]; ctx.lineWidth = 3;
     line(x1 - s, y1, x1 + s, y1); line(x1, y1 - s, x1, y1 + s);
     line(x2 + s, y2, x2 - s, y2); line(x2, y2 + s, x2, y2 - s);
   }
