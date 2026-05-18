@@ -35,8 +35,8 @@ const btnTransform = document.getElementById("btn-transform");
 const btnChange = document.getElementById("btn-change");
 
 // Listas de configuración y estados base
-const grids = ["tercios", "golden", "diagonales", "tri-aureos", "espiral", "fuga", "horizonte", "reframe", "masas", "focus", "paleta"];
-const gridLabels = ["Regla de Tercios", "Sección Áurea", "Diagonales", "Triángulos Áureos", "Espiral Fibonacci", "Punto de Fuga", "Horizonte", "Encuadre", "Masas", "Enfoque", "Paleta"];
+const grids = ["tercios", "golden", "diagonales1", "diagonales2", "diagonales3", "espiral", "fuga", "horizonte", "reframe", "masas", "focus", "paleta"];
+const gridLabels = ["Regla de Tercios", "Sección Áurea", "Diagonales 1", "Diagonales 2", "Diagonales 3", "Espiral Fibonacci", "Punto de Fuga", "Horizonte", "Encuadre", "Masas", "Enfoque", "Paleta"];
 const colors = ["#FFFFFF", "#FF0088", "#00CCFF", "#FFCC00", "#00FF00", "#000000"];
 const color_masas = ["#FFFFFF", "#FF0088", "#00CCFF", "#FFCC00", "#00FF00", "#888888"];
 
@@ -239,7 +239,7 @@ function generatePalette() {
     return scoreB - scoreA;
   });
 
-  clusters = clusters.slice(0, 6); // RECORTE 6 COLORES MAX
+  clusters = clusters.slice(0, 6);
   clusters.sort((a, b) => a.light - b.light);
   paletteColors = clusters;
   paletteDirty = false;
@@ -556,9 +556,7 @@ function drawGrid(mode, x, y, w, h, time) {
         for (let j = 1; j < 3; j++) {
           const nx = x + (w * i) / 3, ny = y + (h * j) / 3;
           ctx.beginPath(); ctx.arc(nx, ny, 9, 0, 6.3); ctx.stroke();
-          ctx.beginPath(); ctx.arc(nx, ny, 12, 0, 6.3); ctx.stroke();
-        }
-      }
+          ctx.beginPath(); ctx.arc(nx, ny, 12, 0, 6.3); ctx.stroke(); } }
     }
   } else if (mode === "golden") {
     const p = 0.618;
@@ -570,9 +568,16 @@ function drawGrid(mode, x, y, w, h, time) {
       [0.236, 0.382, 0.618, 0.764].forEach((pos) => {
         line(x + w * pos, y, x + w * pos, y + h); line(x, y + h * pos, x + w, y + h * pos);
       });
-      ctx.setLineDash([]);
-    }
-  } else if (mode === "tri-aureos") {
+      ctx.setLineDash([]); }
+  } else if (mode === "diagonales1") {
+    const state = transformIdx % 2;
+    line(x + w, y, x, y + h);
+  } else if (mode === "diagonales2") {
+    const state = transformIdx % 2;
+    const marca45 = (cx, cy) => { ctx.beginPath(); ctx.arc(cx, cy, 15, 0, 6.3); ctx.stroke(); };
+      if (w > h) { line(x + w, y, x + w - h, y + h); marca45(x + w, y); line(x, y + h, x + h, y); marca45(x, y + h); } 
+      else { line(x + w, y, x, y + w); marca45(x + w, y); line(x, y + h, x + w, y + h - w); marca45(x, y + h); }
+  } else if (mode === "diagonales3") {
     line(x, y + h, x + w, y);
     const dx = w, dy = -h;
     const t1 = (-h * dy) / (dx * dx + dy * dy); line(x, y, x + t1 * dx, y + h + t1 * dy);
@@ -599,19 +604,6 @@ function drawGrid(mode, x, y, w, h, time) {
       else if (i === 2) { ctx.arc(sqX, sqY, s, 0, 0.5 * Math.PI); cW -= s; } 
       else if (i === 3) { ctx.arc(sqX + s, sqY, s, 0.5 * Math.PI, Math.PI); cH -= s; }
       ctx.stroke();
-    }
-  } else if (mode === "diagonales") {
-    const state = transformIdx % 4;
-    const marca45 = (cx, cy) => { ctx.beginPath(); ctx.arc(cx, cy, 15, 0, 6.3); ctx.stroke(); };
-
-    if (state === 0) line(x + w, y, x, y + h);
-    else if (state === 1) {
-      if (w > h) { line(x, y, x + h, y + h); marca45(x, y); line(x + w, y + h, x + w - h, y); marca45(x + w, y + h); } 
-      else { line(x, y, x + w, y + w); marca45(x, y); line(x + w, y + h, x, y + h - w); marca45(x + w, y + h); }
-    } else if (state === 2) line(x, y, x + w, y + h);
-    else if (state === 3) {
-      if (w > h) { line(x + w, y, x + w - h, y + h); marca45(x + w, y); line(x, y + h, x + h, y); marca45(x, y + h); } 
-      else { line(x + w, y, x, y + w); marca45(x + w, y); line(x, y + h, x + w, y + h - w); marca45(x, y + h); }
     }
   } else if (mode === "fuga") {
     const fx = x + w * fugaX, fy = y + h * fugaY;
@@ -717,8 +709,7 @@ btnGrid.onclick = (e) => {
 };
 
 document.addEventListener("click", (e) => {
-  if (!btnGrid.contains(e.target)) gridMenu.style.display = "none";
-});
+  if (!btnGrid.contains(e.target)) gridMenu.style.display = "none"; });
 
 btnTransform.onclick = () => {
   if (grids[gIdx] === "masas") {
@@ -732,8 +723,7 @@ btnTransform.onclick = () => {
     generatePalette();
     transformIdx = 0;
   } else {
-    transformIdx = (transformIdx + 1) % 4;
-  }
+    transformIdx = (transformIdx + 1) % 4; }
 };
 
 document.getElementById("btn-color").onclick = () => {
