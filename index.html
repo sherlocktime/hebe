@@ -1,93 +1,40 @@
 <!doctype html>
 <html lang="es">
-
 <head>
-    <meta charset="UTF-8" />
-
-    <meta name="viewport"
-        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
-
-    <title>COSO</title>
-
-    <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png" />
-    <link rel="apple-touch-icon" href="icons/icon-192.png" />
-    <link rel="manifest" href="manifest.json" />
-
-    <meta name="theme-color" content="#000000" />
-    <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="black" />
-
-    <link rel="stylesheet" href="styles.css" />
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <title>Estudio de Composición</title>
+  <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png" />
+  <link rel="apple-touch-icon" href="icons/icon-192.png" />
+  <link rel="manifest" href="manifest.json" />
+  <meta name="theme-color" content="#000000" /><meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black" />
+  <link rel="stylesheet" href="styles.css" />
 </head>
-
 <body>
-
-    <div id="container">
-
-        <canvas id="canvas"></canvas>
-
-        <!-- SPLASH -->
-        <div id="splash-screen">
-
-            <h2 style="margin-bottom: 20px; font-weight: 300">
-                ESTUDIO DE COMPOSICIÓN
-            </h2>
-
-            <button class="main-btn btn-local" id="action-local">
-                Cargar de mi Galería
-            </button>
-
-            <button class="main-btn btn-photo" id="action-photo">
-                Fotografía Aleatoria
-            </button>
-
-            <button class="main-btn btn-museum" id="action-museum">
-                Art Institute Chicago
-            </button>
-
-            <input
-                type="file"
-                id="file-input"
-                accept="image/*"
-                style="display: none"
-            />
-
-            <div id="loading-msg">Cargando...</div>
-
-        </div>
-
-        <!-- TOP UI -->
-        <div id="top-ui">
-            <button id="btn-change" class="ui-btn">
-                CAMBIAR ORIGEN
-            </button>
-        </div>
-
-        <!-- CONTROLES -->
-        <div class="controls-area" id="controls-area">
-
-            <button id="btn-reset" class="ui-btn">
-                RESET
-            </button>
-
-            <button id="btn-grid" class="ui-btn">
-                Regla de Tercios
-                <div id="grid-menu"></div>
-            </button>
-
-            <button id="btn-transform" class="ui-btn">
-                ALT
-            </button>
-
-            <button id="btn-color" class="ui-btn">
-                <div id="color-dot"></div>
-            </button>
-
-        </div>
-
+  <div id="container">
+    <canvas id="canvas"></canvas>
+    <!-- SPLASH -->
+    <div id="splash-screen">
+      <h2 style="margin-bottom: 20px; font-weight: 300">ESTUDIO DE COMPOSICIÓN</h2>
+      <button class="main-btn btn-local" id="action-local">Cargar de mi Galería</button>
+      <button class="main-btn btn-photo" id="action-photo">Fotografía Aleatoria</button>
+      <button class="main-btn btn-museum" id="action-museum">Art Institute Chicago</button>
+      <input type="file" id="file-input" accept="image/*" style="display: none" />
+      <div id="loading-msg">Cargando...</div>
     </div>
-
-    <script src="app.js"></script>
-
+    <!-- TOP UI -->
+    <div id="top-ui">
+      <button id="btn-change" class="ui-btn">CAMBIAR ORIGEN</button>
+    </div>
+    <!-- CONTROLES -->
+    <div class="controls-area" id="controls-area">
+      <button id="btn-reset" class="ui-btn">RESET</button>
+      <button id="btn-grid" class="ui-btn">Regla de Tercios <div id="grid-menu"></div></button>
+      <button id="btn-transform" class="ui-btn">ALT</button>
+      <button id="btn-color" class="ui-btn"><div id="color-dot"></div></button>
+    </div>
+  </div>
+  <script src="app.js"></script>
 </body>
 </html>
