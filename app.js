@@ -33,6 +33,7 @@ const controls = document.getElementById("controls-area");
 const btnGrid = document.getElementById("btn-grid");
 const btnTransform = document.getElementById("btn-transform");
 const btnChange = document.getElementById("btn-change");
+const paletteOverlay = document.getElementById("palette-overlay");
 
 // Listas de configuración y estados base
 const grids = ["tercios", "golden", "diagonales1", "diagonales2", "diagonales3", "espiral", "fuga", "horizonte", "reframe", "masas", "focus", "paleta"];
@@ -243,6 +244,20 @@ function generatePalette() {
   clusters.sort((a, b) => a.light - b.light);
   paletteColors = clusters;
   paletteDirty = false;
+
+  renderPaletteOverlay();
+}
+
+function renderPaletteOverlay() {
+  if (!paletteOverlay) return;
+  paletteOverlay.innerHTML = "";
+  paletteColors.forEach((cluster) => {
+    const [r, g, b] = cluster.color;
+    const chip = document.createElement("div");
+    chip.className = "palette-chip";
+    chip.style.backgroundColor = `rgb(${r}, ${g}, ${b})`;
+    paletteOverlay.appendChild(chip); });
+  paletteOverlay.style.display = "flex";
 }
 
 function rgbToHsl([r, g, b]) {
@@ -328,7 +343,7 @@ function autoK(pixels) {
 }
 
 /* ==========================================================================
-   ### INTERACCIÓN (GENTURES, MOUSE y TOUCH) ###
+   ### INTERACCIÓN (GESTURES, MOUSE y TOUCH) ###
    ========================================================================== */
 
 function handleStart(e) {
@@ -488,27 +503,12 @@ function render(time) {
 
     // Render del modo Paleta
     if (grids[gIdx] === "paleta" && !isBypass) {
-      if (paletteDirty || paletteColors.length === 0) generatePalette();
-      ctx.save();
-      ctx.filter = "brightness(0.35)";
-      ctx.drawImage(loadedImage, imgX, imgY, rw, rh);
-      ctx.restore();
+    if (paletteDirty || paletteColors.length === 0) { generatePalette(); }
 
-      const bandW = rw / paletteColors.length;
-      let offset = imgX;
-      ctx.save();
-      ctx.lineWidth = 1;
-      for (const cluster of paletteColors) {
-        const [r, g, b] = cluster.color;
-        ctx.fillStyle = `rgb(${r}, ${g}, ${b})`;
-        ctx.fillRect(offset, imgY, bandW + 1, rh);
-        ctx.save();
-        ctx.globalAlpha = 0.4;
-        ctx.strokeRect(offset, imgY, bandW, rh);
-        ctx.restore();
-        offset += bandW;
-      }
-      ctx.restore();
+    ctx.save();
+    ctx.filter = "brightness(0.7)";
+    ctx.drawImage(loadedImage, imgX, imgY, rw, rh);
+    ctx.restore();
     }
 
     // Dibujo de las Grillas de Composición
@@ -692,7 +692,9 @@ function setGrid(index) {
   transformIdx = 0;
   if (grids[gIdx] === "fuga") pulseStartTime = performance.now();
   if (grids[gIdx] === "reframe") initFrameCompL();
-  if (grids[gIdx] === "paleta") paletteDirty = true;
+  if (grids[gIdx] === "paleta") { paletteDirty = true; 
+    generatePalette(); paletteOverlay.style.display = "flex";
+  } else { paletteOverlay.style.display = "none"; }
   
   const noTransform = ["fuga", "focus", "reframe"].includes(grids[gIdx]);
   btnTransform.style.opacity = noTransform ? "0.5" : "1";
