@@ -506,7 +506,7 @@ function render(time) {
     if (paletteDirty || paletteColors.length === 0) { generatePalette(); }
 
     ctx.save();
-    ctx.filter = "brightness(0.7)";
+    ctx.filter = "brightness(0.7) blur(10px)";
     ctx.drawImage(loadedImage, imgX, imgY, rw, rh);
     ctx.restore();
     }
